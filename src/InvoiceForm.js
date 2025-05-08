@@ -1,224 +1,214 @@
 import React from 'react';
 import {
-  Grid,
+  Box,
   TextField,
-  Typography,
+  IconButton,
   Button,
+  Divider,
+  Typography,
+  Card,
+  Grid,
 } from '@mui/material';
+import { AddCircle, RemoveCircle } from '@mui/icons-material';
 
-function InvoiceForm({ data, onDataChange, labels }) {
-  const handleChange = (section, field, value) => {
-    onDataChange({
-      ...data,
-      [section]: {
-        ...data[section],
-        [field]: value,
-      },
-    });
+export default function InvoiceForm({ data, onDataChange, labels }) {
+  const handleFieldChange = (field) => (e) => {
+    onDataChange({ ...data, [field]: e.target.value });
   };
 
-  const handleFieldChange = (field, value) => {
-    onDataChange({
-      ...data,
-      [field]: value,
-    });
+  const handleNumberChange = (field) => (e) => {
+    const val = parseFloat(e.target.value);
+    onDataChange({ ...data, [field]: isNaN(val) ? 0 : val });
   };
 
-  const handleItemChange = (index, field, value) => {
-    const updatedItems = data.items.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
-    );
-    onDataChange({ ...data, items: updatedItems });
+  const handleItemChange = (idx, field) => (e) => {
+    const items = [...data.items];
+    const value =
+      field === 'quantity' || field === 'unitPrice'
+        ? parseFloat(e.target.value) || 0
+        : e.target.value;
+    items[idx][field] = value;
+    onDataChange({ ...data, items });
   };
 
   const addItem = () => {
-    const defaultItem = {
-      description: data.items.length === 0 ? 'Teenus' : '',
-      quantity: 1,
-      unit: 'tk/h',
-      unitPrice: 0,
-    };
-  
     onDataChange({
       ...data,
-      items: [...data.items, defaultItem],
+      items: [...data.items, { description: '', quantity: 1, unit: 'pcs', unitPrice: 0 }],
     });
   };
 
-  const removeItem = (index) => {
-    const updatedItems = data.items.filter((_, i) => i !== index);
-    onDataChange({ ...data, items: updatedItems });
+  const removeItem = (idx) => {
+    const items = data.items.filter((_, i) => i !== idx);
+    onDataChange({ ...data, items });
   };
 
   return (
-    <Grid container spacing={1.5}>
-      {/* Supplier */}
-      <Grid item xs={6}>
-        <Typography variant="body1" fontWeight={600}>{labels.supplier}</Typography>
-        <TextField
-          size="small"
-          label="Company Name"
-          fullWidth
-          value={data.company.name}
-          onChange={(e) => handleChange('company', 'name', e.target.value)}
-        />
-        <TextField
-          size="small"
-          label="Address"
-          fullWidth
-          value={data.company.address}
-          onChange={(e) => handleChange('company', 'address', e.target.value)}
-        />
-        <TextField
-          size="small"
-          label="Registration Code"
-          fullWidth
-          value={data.company.regCode}
-          onChange={(e) => handleChange('company', 'regCode', e.target.value)}
-        />
-      </Grid>
-
-      {/* Client */}
-      <Grid item xs={6}>
-        <Typography variant="body1" fontWeight={600}>{labels.client}</Typography>
-        <TextField
-          size="small"
-          label="Client Name"
-          fullWidth
-          value={data.client.name}
-          onChange={(e) => handleChange('client', 'name', e.target.value)}
-        />
-        <TextField
-          size="small"
-          label="Address"
-          fullWidth
-          value={data.client.address}
-          onChange={(e) => handleChange('client', 'address', e.target.value)}
-        />
-        <TextField
-          size="small"
-          label="Registration Code"
-          fullWidth
-          value={data.client.regCode}
-          onChange={(e) => handleChange('client', 'regCode', e.target.value)}
-        />
-      </Grid>
-
-      {/* Invoice Metadata */}
-      <Grid item xs={4}>
-        <TextField
-          size="small"
-          label={labels.invoiceNumber}
-          fullWidth
-          value={data.invoiceNumber}
-          onChange={(e) => handleFieldChange('invoiceNumber', e.target.value)}
-        />
-      </Grid>
-      <Grid item xs={4}>
-        <TextField
-          size="small"
-          label={labels.date}
-          type="date"
-          fullWidth
-          value={data.date}
-          onChange={(e) => handleFieldChange('date', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-      </Grid>
-      <Grid item xs={4}>
-        <TextField
-          size="small"
-          label={labels.dueDate}
-          type="date"
-          fullWidth
-          value={data.dueDate}
-          onChange={(e) => handleFieldChange('dueDate', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-      </Grid>
-
-      
-
-      {/* Bank Info */}
-      <Grid item xs={6}>
-        <TextField
-          size="small"
-          label={labels.account}
-          fullWidth
-          value={data.bankAccount}
-          onChange={(e) => handleFieldChange('bankAccount', e.target.value)}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <TextField
-          size="small"
-          label={labels.bic}
-          fullWidth
-          value={data.bic}
-          onChange={(e) => handleFieldChange('bic', e.target.value)}
-        />
-      </Grid>
-
-      {/* Line Items */}
-      <Grid item xs={12}>
-        <Typography variant="subtitle2" fontWeight={500} gutterBottom>
-          {labels.addItem}
-        </Typography>
-        {data.items.map((item, index) => (
-          <Grid container spacing={1} key={index} alignItems="center">
-            <Grid item xs={4}>
-              <TextField
-                size="small"
-                label={labels.description}
-                fullWidth
-                value={item.description}
-                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-              />
+    <Box sx={{ mt: 4 }}>
+      <Box sx={{ transform: 'scale(0.8)', transformOrigin: 'top left', pt: 6 }}>
+        <Card elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+          {/* Invoice Metadata and Client Info */}
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                {labels.invoiceTitle} Details
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label={labels.invoiceNumber}
+                    value={data.invoiceNumber}
+                    onChange={handleFieldChange('invoiceNumber')}
+                    fullWidth
+                    
+                  />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <TextField
+                    label={labels.date}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={data.date}
+                    onChange={handleFieldChange('date')}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <TextField
+                    label={labels.dueDate}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={data.dueDate}
+                    onChange={handleFieldChange('dueDate')}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label={labels.taxRate}
+                    type="number"
+                    value={data.taxRate}
+                    onChange={handleNumberChange('taxRate')}
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
             </Grid>
-            <Grid item xs={2}>
-              <TextField
-                size="small"
-                label={labels.quantity}
-                type="number"
-                fullWidth
-                value={item.quantity}
-                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <TextField
-                size="small"
-                label={labels.unit}
-                fullWidth
-                value={item.unit}
-                onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <TextField
-                size="small"
-                label={labels.unitPrice}
-                type="number"
-                fullWidth
-                value={item.unitPrice}
-                onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <Button size="small" color="error" onClick={() => removeItem(index)}>
-                {labels.remove}
-              </Button>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                {labels.client}
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid item xs={12}>
+                  <TextField
+                    label={labels.client}
+                    value={data.client.name}
+                    onChange={(e) =>
+                      onDataChange({
+                        ...data,
+                        client: { ...data.client, name: e.target.value },
+                      })
+                    }
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label={labels.address}
+                    value={data.client.address}
+                    onChange={(e) =>
+                      onDataChange({
+                        ...data,
+                        client: { ...data.client, address: e.target.value },
+                      })
+                    }
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label={labels.regCode}
+                    value={data.client.regCode}
+                    onChange={(e) =>
+                      onDataChange({
+                        ...data,
+                        client: { ...data.client, regCode: e.target.value },
+                      })
+                    }
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
-        ))}
-        <Button size="small" onClick={addItem}>
-          {labels.addItem}
-        </Button>
-      </Grid>
 
-     
-    </Grid>
+          <Divider sx={{ my: 2 }} />
+
+          {/* Product Items */}
+          <Typography variant="subtitle1" gutterBottom>
+            {labels.description}
+          </Typography>
+          {data.items.map((item, idx) => (
+            <Grid container spacing={1} key={idx} alignItems="center" sx={{ mb: 1 }}>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label={labels.description}
+                  value={item.description}
+                  onChange={handleItemChange(idx, 'description')}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={6} md={2}>
+                <TextField
+                  label={labels.quantity}
+                  type="number"
+                  value={item.quantity}
+                  onChange={handleItemChange(idx, 'quantity')}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={6} md={2}>
+                <TextField
+                  label={labels.unit}
+                  value={item.unit}
+                  onChange={handleItemChange(idx, 'unit')}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <TextField
+                  label={labels.unitPrice}
+                  type="number"
+                  value={item.unitPrice}
+                  onChange={handleItemChange(idx, 'unitPrice')}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} md={1}>
+                <IconButton onClick={() => removeItem(idx)} disabled={data.items.length === 1}>
+                  <RemoveCircle />
+                </IconButton>
+              </Grid>
+            </Grid>
+          ))}
+
+          <Button startIcon={<AddCircle />} onClick={addItem} size="small" sx={{ mt: 1 }}>
+            {labels.addItem}
+          </Button>
+
+          <Divider sx={{ my: 2 }} />
+
+          <TextField
+            label={labels.notes}
+            value={data.notes}
+            onChange={handleFieldChange('notes')}
+            multiline
+            rows={2}
+            fullWidth
+          />
+        </Card>
+      </Box>
+    </Box>
   );
 }
-
-export default InvoiceForm;

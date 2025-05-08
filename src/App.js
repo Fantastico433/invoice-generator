@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Container,
   Grid,
   Typography,
   Button,
-  Switch,
-  Slider,
   Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Snackbar,
+  IconButton,
+  Card,
+  Divider,
 } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Brightness4, Brightness7, Close as CloseIcon } from '@mui/icons-material';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const companies = {
   skycorp: {
@@ -20,203 +28,259 @@ const companies = {
     regCode: '14211211',
     bankAccount: 'EE117700771002605677',
     bic: 'LHVBEE22',
+    logoUrl: '/logo.png',
   },
   skycorpTech: {
     name: 'SKYCORP Technologies OÜ',
-    address: 'Teaduspargi 11, Tartu',
+    address: 'Teaduspargi 11, Tartu, Eesti',
     regCode: '16782217',
     bankAccount: 'EE767700771009349402',
     bic: 'LHVBEE22',
+    logoUrl: '/logo.png',
   },
 };
 
+const currencyRates = { EUR: 1, USD: 1.1 };
+
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('et');
-  const [isExporting, setIsExporting] = useState(false);
   const [companyId, setCompanyId] = useState('skycorp');
+  const [currency, setCurrency] = useState('EUR');
+  const [autosaveMsg, setAutosaveMsg] = useState(false);
+
+  const [invoiceData, setInvoiceData] = useState(() => {
+    const saved = localStorage.getItem('invoiceData');
+    return saved
+      ? JSON.parse(saved)
+      : {
+          company: companies[companyId],
+          client: { name: '', address: '', regCode: '' },
+          invoiceNumber: '2025043002',
+          date: new Date().toISOString().split('T')[0],
+          dueDate: '',
+          bankAccount: companies[companyId].bankAccount,
+          bic: companies[companyId].bic,
+          taxRate: 22,
+          items: [{ description: '', quantity: 1, unit: 'pcs', unitPrice: 0 }],
+          notes: '',
+        };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+    setAutosaveMsg(true);
+  }, [invoiceData]);
+
+  const theme = useMemo(
+    () => createTheme({ palette: { mode: darkMode ? 'dark' : 'light' } }),
+    [darkMode]
+  );
 
   const labels = {
     et: {
-      supplier: 'Tarnija',
-      client: 'Klient',
-      invoiceNumber: 'Dokumendi number',
-      date: 'Dokumendi kuupäev',
+      toggleLang: 'ENG',
+      invoiceTitle: 'Arve',
+      invoiceTitleDefault: 'ARVE',
+      invoiceNumber: 'Arve nr',
+      date: 'Kuupäev',
       dueDate: 'Tähtaeg',
-      account: 'Pangakonto',
-      bic: 'BIC',
-      addItem: '＋ Lisa rida',
-      remove: 'Eemalda',
-      subtotal: 'Summa KM-ta',
-      vat: 'KM',
-      total: 'Kogusumma',
+      client: 'Klient',
+      address: 'Aadress',
+      taxRate: 'KM määr (%)',
+      addItem: 'Lisa rida',
       description: 'Kirjeldus',
       quantity: 'Kogus',
       unit: 'Ühik',
       unitPrice: 'Ühiku hind',
-      tax: 'KM %',
+      notes: 'Märkused',
+      download: 'Laadi alla',
+      supplier: 'Müüja',
+      regCode: 'Reg kood',
       amount: 'Summa',
-      download: 'Laadi PDF',
-      toggleLang: 'English',
-      invoiceTitleDefault: 'ARVE',
+      subtotal: 'Summa KM-ta',
+      vat: 'KM',
+      total: 'Kokku',
+      account: 'Arveldusarve',
     },
     en: {
-      supplier: 'Supplier',
+      toggleLang: 'EST',
+      invoiceTitle: 'Invoice',
+      invoiceTitleDefault: 'INVOICE',
+      invoiceNumber: 'Invoice #',
+      date: 'Date',
+      dueDate: 'Due date',
       client: 'Client',
-      invoiceNumber: 'Invoice Number',
-      date: 'Invoice Date',
-      dueDate: 'Due Date',
-      account: 'Bank Account',
-      bic: 'BIC',
-      addItem: '＋ Add line item',
-      remove: 'Remove',
-      subtotal: 'Subtotal (excl. VAT)',
-      vat: 'VAT',
-      total: 'Total',
+      address: 'Address',
+      taxRate: 'Tax rate (%)',
+      addItem: 'Add item',
       description: 'Description',
       quantity: 'Quantity',
       unit: 'Unit',
-      unitPrice: 'Unit Price',
-      tax: 'VAT %',
+      unitPrice: 'Unit price',
+      notes: 'Notes',
+      download: 'Download',
+      supplier: 'Supplier',
+      regCode: 'Reg code',
       amount: 'Amount',
-      download: 'Download PDF',
-      toggleLang: 'Eesti',
-      invoiceTitleDefault: 'Invoice',
+      subtotal: 'Subtotal',
+      vat: 'VAT',
+      total: 'Total',
+      account: 'Account',
     },
   };
 
-  const [invoiceData, setInvoiceData] = useState({
-    company: { ...companies[companyId] },
-    client: {
-      name: '',
-      invoiceTitle: 'Teenusearve',
-      address: '',
-      regCode: '',
-    },
-    invoiceNumber: '2025043002',
-    date: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    bankAccount: companies[companyId].bankAccount,
-    bic: companies[companyId].bic,
-    taxRate: 22,
-    items: [],
-    notes: '',
-  });
-
-  const [previewScale, setPreviewScale] = useState(1);
-  const [compactView, setCompactView] = useState(false);
-
-  const handleDataChange = (updatedData) => {
-    setInvoiceData(updatedData);
-  };
+  const handleDataChange = (updated) => setInvoiceData(updated);
 
   const switchCompany = () => {
-    const nextId = companyId === 'skycorp' ? 'skycorpTech' : 'skycorp';
-    const nextCompany = companies[nextId];
-    setCompanyId(nextId);
+    const next = companyId === 'skycorp' ? 'skycorpTech' : 'skycorp';
+    setCompanyId(next);
     setInvoiceData((prev) => ({
       ...prev,
-      company: {
-        name: nextCompany.name,
-        address: nextCompany.address,
-        regCode: nextCompany.regCode,
-      },
-      bankAccount: nextCompany.bankAccount,
-      bic: nextCompany.bic,
+      company: companies[next],
+      bankAccount: companies[next].bankAccount,
+      bic: companies[next].bic,
     }));
   };
 
   const handleExportPDF = async () => {
-    setIsExporting(true);
-    setTimeout(async () => {
-      const element = document.getElementById('pdf-preview');
-      const canvas = await html2canvas(element, { scale: 1.2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'pt', 'a4');
+    const element = document.getElementById('pdf-preview');
+    if (!element) return;
 
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const canvas = await html2canvas(element, {
+      scale: 1.5,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+    });
 
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-      pdf.save(`invoice_${invoiceData.invoiceNumber || 'export'}.pdf`);
-      setIsExporting(false);
-    }, 300);
+    const imgData = canvas.toDataURL('image/jpeg', 0.85);
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px',
+      format: [canvas.width, canvas.height],
+    });
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+    pdf.save(`invoice_${invoiceData.invoiceNumber}.pdf`);
   };
 
   return (
-    <Container>
-      <Grid container spacing={2} justifyContent="space-between" alignItems="center">
-        <Grid item>
-          <Typography variant="h5" gutterBottom fontWeight={500}>
-            Invoice Generator
-          </Typography>
-        </Grid>
-        <Grid item>
-          <Button variant="outlined" onClick={() => setLanguage(language === 'et' ? 'en' : 'et')}>
-            {labels[language].toggleLang}
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button variant="outlined" onClick={switchCompany}>
-            {companyId === 'skycorp' ? 'Use SKYCORP Technologies OÜ' : 'Use SKYCORP OÜ'}
-          </Button>
-        </Grid>
-      </Grid>
-  
-      {/* Scaled invoice generator UI */}
-      <Box sx={{ transform: 'scale(0.8)', transformOrigin: 'top left' }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <InvoiceForm
-              data={invoiceData}
-              onDataChange={handleDataChange}
-              labels={labels[language]}
-            />
+    <ThemeProvider theme={theme}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Card elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+          {/* Header */}
+          <Grid
+            container
+            spacing={1}
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 2 }}
+          >
+            <Grid item>
+              <Typography variant="h5">Invoice Generator</Typography>
+            </Grid>
+
+            <Grid item>
+              <IconButton
+                onClick={() => setDarkMode(!darkMode)}
+                size="small"
+                sx={{ p: 0.5 }}
+              >
+                {darkMode ? <Brightness7 /> : <Brightness4 />}
+              </IconButton>
+            </Grid>
+
+            <Grid item>
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Currency</InputLabel>
+                <Select
+                  value={currency}
+                  label="Currency"
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  {Object.keys(currencyRates).map((cur) => (
+                    <MenuItem key={cur} value={cur}>
+                      {cur}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item>
+              <Button
+                onClick={() => setLanguage(language === 'et' ? 'en' : 'et')}
+                size="small"
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                {labels[language].toggleLang}
+              </Button>
+            </Grid>
+
+            <Grid item>
+              <Button
+                variant="outlined"
+                onClick={switchCompany}
+                size="small"
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
+              </Button>
+            </Grid>
+
+            <Grid item>
+              <Button
+                variant="contained"
+                onClick={handleExportPDF}
+                size="small"
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                {labels[language].download}
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body1" fontWeight={500}>Live Preview</Typography>
-            <Slider
-              value={previewScale}
-              min={0.5}
-              max={2}
-              step={0.1}
-              onChange={(e, value) => setPreviewScale(value)}
-              valueLabelDisplay="auto"
-            />
-            <Typography variant="body2">Compact View</Typography>
-            <Switch
-              checked={compactView}
-              onChange={(e) => setCompactView(e.target.checked)}
-            />
-            <InvoicePreview
-              data={invoiceData}
-              scale={previewScale}
-              compact={compactView}
-              labels={labels[language]}
-              invoiceTitleDefault={labels[language].invoiceTitleDefault}
-            />
-            <Button variant="contained" onClick={handleExportPDF}>
-              {labels[language].download}
-            </Button>
+
+          <Divider sx={{ mb: 1 }} />
+
+          {/* Main Content */}
+          <Grid container spacing={0}>
+            <Grid item xs={12} md={6} sx={{ p: 0 }}>
+              <InvoiceForm
+                data={invoiceData}
+                onDataChange={handleDataChange}
+                labels={labels[language]}
+              />
+            </Grid>
+            <Grid item xs={12} md={6} sx={{ p: 0 }}>
+              <Typography variant="h6" sx={{ mb: 0 }}>
+                Live Preview
+              </Typography>
+              <InvoicePreview
+                data={invoiceData}
+                labels={labels[language]}
+                currency={currency}
+                rates={currencyRates}
+                invoiceTitleDefault={labels[language].invoiceTitleDefault}
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
-  
-      {isExporting && (
-        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-          <InvoicePreview
-            data={invoiceData}
-            scale={1}
-            compact={compactView}
-            labels={labels[language]}
-            isExportMode={true}
-            invoiceTitleDefault={labels[language].invoiceTitleDefault}
-          />
-        </div>
-      )}
-    </Container>
+        </Card>
+
+        {/* Snackbar */}
+        <Snackbar
+          open={autosaveMsg}
+          autoHideDuration={2000}
+          onClose={() => setAutosaveMsg(false)}
+          message="Autosaved"
+          action={
+            <IconButton size="small" onClick={() => setAutosaveMsg(false)}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          }
+        />
+      </Container>
+    </ThemeProvider>
   );
-  
 }
 
 export default App;

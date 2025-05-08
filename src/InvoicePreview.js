@@ -1,140 +1,217 @@
 import React from 'react';
 import {
-  Paper,
+  Card,
   Typography,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
   Box,
   Divider,
   Grid,
+  Avatar,
+  useTheme,
+  alpha
 } from '@mui/material';
+import { Business, Person, ReceiptLong } from '@mui/icons-material';
 
-function InvoicePreview({ data, scale, compact, labels, isExportMode = false, invoiceTitleDefault }) {
+function InvoicePreview({ data, scale = 1, compact = false, labels, isExportMode = false, invoiceTitleDefault }) {
+  const theme = useTheme();
+
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const vat = (subtotal * data.taxRate) / 100;
   const total = subtotal + vat;
 
-  const containerStyle = isExportMode
+  const containerStyles = isExportMode
     ? {
-        width: '794px',
-        minHeight: '1123px',
+        width: 794,
+        minHeight: 1123,
         margin: '0 auto',
-        padding: '48px 40px 40px 40px',
+        padding: '64px',
         backgroundColor: '#fff',
-        boxSizing: 'border-box',
-        fontSize: '9px',
-        lineHeight: 1.4,
+        fontSize: 11,
+        lineHeight: 1.6,
       }
     : {
         transform: `scale(${scale})`,
         transformOrigin: 'top left',
-        width: '794px',
+        width: 794,
         margin: '0 auto',
-        padding: compact ? '16px' : '24px 32px',
+        padding: compact ? theme.spacing(4) : theme.spacing(6),
         backgroundColor: '#fff',
-        fontSize: '9px',
-        lineHeight: 1.4,
+        fontSize: 11,
+        lineHeight: 1.6,
       };
 
   return (
-    <div id="pdf-preview" style={containerStyle}>
-     <Paper elevation={0}>
-  {/* Move title down */}
-  <Box mt={4} mb={2}>
-    <Grid container justifyContent="space-between">
-      <Grid item>
-      <Typography variant="h6" fontWeight={700}>{invoiceTitleDefault}</Typography>
-      </Grid>
-      <Grid item>
-        <Typography>Dokumendi number: {data.invoiceNumber}</Typography>
-        <Typography>Dokumendi kuupäev: {data.date}</Typography>
-        <Typography>Tähtaeg: {data.dueDate}</Typography>
-      </Grid>
-    </Grid>
-  </Box>
+    <div id="pdf-preview" style={containerStyles}>
+      {/* Gradient Accent Bar */}
+      <Box sx={{
+        height: 6,
+        background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+        mb: 4,
+        borderRadius: 2
+      }} />
 
-  {/* Move supplier down more */}
-  {/* Supplier and Client on same level */}
-<Grid container spacing={2} mb={2}>
-  {/* Supplier aligned left */}
-  <Grid item xs={6}>
+      <Card elevation={3} sx={{ borderRadius: 3, p: 4 }}>
+        {/* Header */}
+        <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
+        <Grid item>
+  <Box display="flex" alignItems="center">
+    <Avatar src="/logo.png" alt="Company Logo" crossOrigin="anonymous" sx={{ mr: 2, width: 64, height: 64 }} />
     <Box>
-      <img
-        src="/logo.png"
-        alt="Logo"
-        style={{ width: '48px', height: 'auto', objectFit: 'contain', marginBottom: '8px' }}
-      />
-      <Typography variant="subtitle1" fontWeight={600}>{labels.supplier}</Typography>
-      <Typography>{data.company.name}</Typography>
-      <Typography>{data.company.address}</Typography>
-      <Typography>Registrikood: {data.company.regCode}</Typography>
+      <Typography variant="h5" fontWeight={700} color="text.primary">
+        {data.company.name}
+      </Typography>
+      <Typography variant="subtitle2" color="text.secondary">
+        {data.company.address}
+      </Typography>
     </Box>
+  </Box>
+</Grid>
+          <Grid item>
+            <Box display="flex" alignItems="center" gap={1}>
+              <ReceiptLong color="primary" />
+              <Typography variant="h4" fontWeight={700} color="primary">
+                {invoiceTitleDefault || 'INVOICE'}
+              </Typography>
+            </Box>
+            <Box mt={2}>
+              <Typography variant="body2"><strong>{labels.invoiceNumber}:</strong> {data.invoiceNumber}</Typography>
+              <Typography variant="body2"><strong>{labels.date}:</strong> {data.date}</Typography>
+              <Typography variant="body2"><strong>{labels.dueDate}:</strong> {data.dueDate}</Typography>
+            </Box>
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ mb: 5 }} />
+
+        {/* Supplier & Client Info */}
+        <Grid container justifyContent="space-between" spacing={4} sx={{ mb: 5 }}>
+  {/* Supplier on the left */}
+  <Grid item xs={12} md={5}>
+    <Box display="flex" alignItems="center" gap={1} mb={1}>
+      <Business fontSize="small" color="action" />
+      <Typography variant="subtitle1" fontWeight={600}>{labels.supplier}</Typography>
+    </Box>
+    <Typography variant="body2">{data.company.name}</Typography>
+    <Typography variant="body2">{data.company.address}</Typography>
+    <Typography variant="body2">{labels.regCode}: {data.company.regCode}</Typography>
   </Grid>
 
-  {/* Client aligned right with spacing */}
-  {/* Client aligned right with spacing */}
-<Grid item xs={8} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-  <Box textAlign="right" mt={7} sx={{ transform: 'translateX(225px)' }}>
-  <Typography variant="subtitle1" textAlign="left" fontWeight={600}>{labels.client}</Typography>
-  <Typography display="block" textAlign="left">{data.client.name}</Typography>
-  <Typography display="block" textAlign="left">{data.client.address}</Typography>
-  <Typography display="block" textAlign="left">Registrikood: {data.client.regCode}</Typography>
-  </Box>
+  {/* Spacer */}
+  <Grid item xs={false} md={2} sx={{ display: { xs: 'none', md: 'block' } }} />
+
+  {/* Client */}
+  <Grid item xs={12} md={5} sx={{ textAlign: 'right', pr: { xs: 1, md: 4 } }}>
+    <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1} mb={1}>
+      <Person fontSize="small" color="action" />
+      <Typography variant="subtitle1" fontWeight={600}>{labels.client}</Typography>
+    </Box>
+    <Typography variant="body2">{data.client.name}</Typography>
+    <Typography variant="body2">{data.client.address}</Typography>
+    <Typography variant="body2">{labels.regCode}: {data.client.regCode}</Typography>
+  </Grid>
 </Grid>
-</Grid>
 
 
-        {/* Table Header */}
-        <Box mt={8} mb={1}>
-          <Typography variant="subtitle2" fontWeight={600}>
-            {labels.description} {labels.quantity} {labels.unit} {labels.unitPrice} {labels.tax} {labels.amount} (EUR)
-          </Typography>
-        </Box>
-
-        {/* Item Table */}
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{labels.description}</TableCell>
-              <TableCell align="right">{labels.quantity}</TableCell>
-              <TableCell align="right">{labels.unit}</TableCell>
-              <TableCell align="right">{labels.unitPrice}</TableCell>
-              <TableCell align="right">{labels.tax}</TableCell>
-              <TableCell align="right">{labels.amount}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.items.map((item, index) => (
-              <TableRow key={index} sx={{ '& td': { py: 1.5 } }}>
-                <TableCell>{item.description}</TableCell>
-                <TableCell align="right">{item.quantity}</TableCell>
-                <TableCell align="right">{item.unit}</TableCell>
-                <TableCell align="right">{parseFloat(item.unitPrice).toFixed(2)}</TableCell>
-                <TableCell align="right">{data.taxRate.toFixed(1)}%</TableCell>
-                <TableCell align="right">{(item.quantity * item.unitPrice).toFixed(2)} EUR</TableCell>
+        {/* Items Table */}
+        <TableContainer sx={{ mb: 5 }}>
+          <Table size="small" stickyHeader sx={{ '& th': { bgcolor: theme.palette.grey[100] } }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>{labels.description}</TableCell>
+                <TableCell align="right">{labels.quantity}</TableCell>
+                <TableCell align="right">{labels.unit}</TableCell>
+                <TableCell align="right">{labels.unitPrice}</TableCell>
+                <TableCell align="right">{labels.tax}</TableCell>
+                <TableCell align="right">{labels.amount}</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {data.items.map((item, i) => (
+                <TableRow key={i} sx={{ '&:nth-of-type(odd)': { bgcolor: theme.palette.action.hover } }}>
+                  <TableCell sx={{ py: 2 }}>{item.description}</TableCell>
+                  <TableCell align="right" sx={{ py: 2 }}>{item.quantity}</TableCell>
+                  <TableCell align="right" sx={{ py: 2 }}>{item.unit}</TableCell>
+                  <TableCell align="right" sx={{ py: 2 }}>{parseFloat(item.unitPrice).toFixed(2)} EUR</TableCell>
+                  <TableCell align="right" sx={{ py: 2 }}>{data.taxRate.toFixed(1)}%</TableCell>
+                  <TableCell align="right" sx={{ py: 2 }}>{(item.quantity * item.unitPrice).toFixed(2)} EUR</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-        {/* Totals Box */}
-        <Box mt={8} p={2} bgcolor="#f5f5f5" borderRadius="4px" textAlign="right">
-          <Typography><strong>{labels.subtotal}:</strong> {subtotal.toFixed(2)} EUR</Typography>
-          <Typography><strong>{labels.vat}:</strong> {vat.toFixed(2)} EUR</Typography>
-          <Typography variant="subtitle1" fontWeight={700}>
-            {labels.total}: {total.toFixed(2)} EUR
-          </Typography>
-        </Box>
+        {data.notes && (
+  <Box sx={{ mb: 4 }}>
+    <Typography variant="subtitle2" gutterBottom>
+      {labels.notes}
+    </Typography>
+    <Typography variant="body2" color="text.primary">
+      {data.notes}
+    </Typography>
+  </Box>
+)}
+
+      {/* Totals Summary */}
+<Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 5 }}>
+  <Box
+    sx={{
+      width: 360,
+      p: 3,
+      bgcolor: alpha(theme.palette.primary.light, 0.05),
+      borderRadius: 2,
+      boxShadow: 1,
+    }}
+    
+  >
+    {/* Subtotal */}
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+      <Typography variant="body2" color="text.secondary">
+        {labels.subtotal}
+      </Typography>
+      <Typography variant="body2" color="text.primary">
+        {subtotal.toFixed(2)} EUR
+      </Typography>
+    </Box>
+
+    {/* VAT */}
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+      <Typography variant="body2" color="text.secondary">
+        {labels.vat}
+      </Typography>
+      <Typography variant="body2" color="text.primary">
+        {vat.toFixed(2)} EUR
+      </Typography>
+    </Box>
+
+    <Divider sx={{ my: 2 }} />
+    
+
+    {/* Total */}
+    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <Typography variant="subtitle1" fontWeight={700}>
+        {labels.total}
+      </Typography>
+      <Typography variant="subtitle1" fontWeight={700} color="primary">
+        {total.toFixed(2)} EUR
+      </Typography>
+    </Box>
+  </Box>
+</Box>
 
 
         {/* Footer */}
-        <Box mt={10} pt={2} borderTop="1px solid #ccc" textAlign="center" fontSize="10px">
-          <Typography>{data.company.name} | {labels.account}: {data.bankAccount}</Typography>
+        <Divider sx={{ mb: 3 }} />
+        <Box sx={{ py: 2, textAlign: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            {data.company.name} | {labels.account}: {data.bankAccount}
+          </Typography>
         </Box>
-      </Paper>
+      </Card>
     </div>
   );
 }
