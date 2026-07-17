@@ -121,7 +121,17 @@ function InvoicePreview({
               </Box>
             </Box>
           </Grid>
-          <Grid sx={{ textAlign: isQuote ? 'right' : 'left' }}>
+          <Grid
+            data-testid="document-header-right"
+            sx={{
+              ml: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: isQuote ? 'flex-end' : 'flex-start',
+              flexShrink: 0,
+              textAlign: isQuote ? 'right' : 'left',
+            }}
+          >
             <Box
               display="flex"
               alignItems="center"
@@ -134,7 +144,10 @@ function InvoicePreview({
                 variant="h4"
                 fontWeight={700}
                 style={{ fontSize: isQuote ? '1.7rem' : undefined }}
-                sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}
+                sx={{
+                  color: isQuote ? '#7c3aed' : '#1976d2',
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {documentTitle}
               </Typography>
@@ -142,16 +155,19 @@ function InvoicePreview({
             <Box
               data-testid="document-metadata"
               mt={2}
-              sx={{ textAlign: isQuote ? 'right' : 'left' }}
+              sx={{
+                width: '100%',
+                textAlign: isQuote ? 'right' : 'left',
+              }}
             >
               {hasValue(documentNumber) && (
-                <Typography variant="body2" color="#1f2937"><strong>{numberLabel}:</strong> {documentNumber}</Typography>
+                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{numberLabel}:</strong> {documentNumber}</Typography>
               )}
               {hasValue(data.date) && (
-                <Typography variant="body2" color="#1f2937"><strong>{labels.date}:</strong> {data.date}</Typography>
+                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{labels.date}:</strong> {data.date}</Typography>
               )}
               {hasValue(deadlineValue) && (
-                <Typography variant="body2" color="#1f2937"><strong>{deadlineLabel}:</strong> {deadlineValue}</Typography>
+                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{deadlineLabel}:</strong> {deadlineValue}</Typography>
               )}
             </Box>
           </Grid>

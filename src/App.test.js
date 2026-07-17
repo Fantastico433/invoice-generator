@@ -22,8 +22,16 @@ test('switches between invoice and quote modes', () => {
   expect(screen.getByTestId('document-mode-toggle')).toHaveTextContent('Hinnapakkumise režiim');
   expect(screen.getByText('HINNAPAKKUMINE')).toBeInTheDocument();
   expect(screen.getByTestId('document-title')).toHaveStyle('font-size: 1.7rem');
+  expect(screen.getByTestId('document-title')).toHaveStyle('white-space: nowrap');
+  expect(screen.getByTestId('document-header-right')).toHaveStyle({
+    marginLeft: 'auto',
+    alignItems: 'flex-end',
+  });
   expect(screen.getByTestId('document-metadata')).toHaveStyle('text-align: right');
-  expect(within(screen.getByTestId('document-metadata')).getByText(/Pakkumise nr:/)).toBeInTheDocument();
+  const quoteNumberRow = within(screen.getByTestId('document-metadata'))
+    .getByText(/Pakkumise nr:/)
+    .closest('p');
+  expect(quoteNumberRow).toHaveStyle('white-space: nowrap');
   expect(within(screen.getByTestId('document-metadata')).getByText(/Kuupäev:/)).toBeInTheDocument();
   expect(screen.getByLabelText('Pakkumise nr')).toBeInTheDocument();
   expect(screen.getByLabelText('Kehtib kuni')).toBeInTheDocument();

@@ -117,6 +117,8 @@ export const buildPdfDefinition = ({
         { width: '*', columns: sellerIdentity },
         {
           width: 220,
+          alignment: 'right',
+          unbreakable: true,
           stack: [
             {
               text: title,
@@ -124,9 +126,15 @@ export const buildPdfDefinition = ({
               bold: true,
               color: accent,
               alignment: 'right',
+              noWrap: true,
               margin: [0, 0, 0, 10],
             },
-            ...metadata.map((row) => ({ ...row, alignment: 'right', margin: [0, 2, 0, 0] })),
+            ...metadata.map((row) => ({
+              ...row,
+              alignment: 'right',
+              noWrap: true,
+              margin: [0, 2, 0, 0],
+            })),
           ],
         },
       ],

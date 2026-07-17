@@ -82,8 +82,16 @@ test('builds an A4 quote from real text nodes and omits empty optional fields', 
     isQuote: true,
   });
   const serialized = JSON.stringify(definition);
+  const header = definition.content[1].columns[1];
 
   expect(definition.pageSize).toBe('A4');
+  expect(header).toMatchObject({ width: 220, alignment: 'right', unbreakable: true });
+  expect(header.stack[0]).toMatchObject({
+    text: 'HINNAPAKKUMINE',
+    alignment: 'right',
+    noWrap: true,
+  });
+  expect(header.stack.slice(1).every((row) => row.noWrap)).toBe(true);
   expect(serialized).toContain('HINNAPAKKUMINE');
   expect(serialized).toContain('Valitav teenuse tekst');
   expect(serialized).toContain('Testklient OÜ');
