@@ -22,8 +22,6 @@ import {
   Close as CloseIcon,
   RequestQuote,
 } from '@mui/icons-material';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
 
@@ -244,72 +242,16 @@ function App() {
 
   const handleExportPDF = async () => {
     setIsExporting(true);
-    await new Promise((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(resolve));
-    });
 
     try {
-      const element = document.getElementById('pdf-export-preview');
-      if (!element) return;
-
-      const canvas = await html2canvas(element, {
-        scale: 2.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
+      const { exportDocumentPdf } = await import('./pdfExport');
+      await exportDocumentPdf({
+        data: invoiceData,
+        labels,
+        currency,
+        rates: currencyRates,
+        isQuote,
       });
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true,
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const pageHeightPx = Math.floor((canvas.width * pageHeight) / pageWidth);
-      let sourceY = 0;
-      let pageIndex = 0;
-
-      while (sourceY < canvas.height) {
-        const sliceHeight = Math.min(pageHeightPx, canvas.height - sourceY);
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = pageHeightPx;
-        const context = pageCanvas.getContext('2d');
-
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        context.drawImage(
-          canvas,
-          0,
-          sourceY,
-          canvas.width,
-          sliceHeight,
-          0,
-          0,
-          canvas.width,
-          sliceHeight
-        );
-
-        if (pageIndex > 0) pdf.addPage('a4', 'portrait');
-        pdf.addImage(
-          pageCanvas.toDataURL('image/png'),
-          'PNG',
-          0,
-          0,
-          pageWidth,
-          pageHeight,
-          undefined,
-          'FAST'
-        );
-
-        sourceY += sliceHeight;
-        pageIndex += 1;
-      }
-
-      const documentNumber = isQuote ? invoiceData.quoteNumber : invoiceData.invoiceNumber;
-      pdf.save(`${isQuote ? 'quote' : 'invoice'}_${documentNumber || 'draft'}.pdf`);
     } finally {
       setIsExporting(false);
     }
@@ -438,29 +380,6 @@ function App() {
               </Grid>
             </Grid>
           </Card>
-
-          {isExporting && (
-            <Box
-              aria-hidden="true"
-              sx={{
-                position: 'fixed',
-                left: '-10000px',
-                top: 0,
-                width: 794,
-                pointerEvents: 'none',
-              }}
-            >
-              <InvoicePreview
-                previewId="pdf-export-preview"
-                data={invoiceData}
-                labels={labels}
-                currency={currency}
-                rates={currencyRates}
-                isQuote={isQuote}
-                isExportMode
-              />
-            </Box>
-          )}
 
           <Snackbar
             open={autosaveMsg}
