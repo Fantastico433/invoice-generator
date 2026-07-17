@@ -46,3 +46,15 @@ test('keeps invoice data when quote mode is toggled off again', () => {
 
   expect(screen.getByLabelText('Arve nr')).toHaveValue('ARV-2026-0042');
 });
+
+test('lets the user resize the live document preview', () => {
+  render(<App />);
+
+  const scaleSlider = screen.getByRole('slider', { name: 'Eelvaate suurus' });
+  expect(scaleSlider).toHaveValue('90');
+  expect(document.getElementById('pdf-preview')).toHaveStyle('transform: scale(0.9)');
+
+  fireEvent.change(scaleSlider, { target: { value: '70' } });
+
+  expect(document.getElementById('pdf-preview')).toHaveStyle('transform: scale(0.7)');
+});

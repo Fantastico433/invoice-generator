@@ -11,6 +11,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Slider,
   Snackbar,
   Typography,
 } from '@mui/material';
@@ -97,6 +98,7 @@ const translations = {
     toggleLang: 'ENG',
     appTitle: 'Dokumendivabrik',
     livePreview: 'Eelvaade',
+    previewScale: 'Eelvaate suurus',
     invoiceModeButton: 'Koosta hinnapakkumine',
     quoteModeButton: 'Hinnapakkumise režiim',
     invoiceTitle: 'Arve',
@@ -142,6 +144,7 @@ const translations = {
     toggleLang: 'EST',
     appTitle: 'Document Factory',
     livePreview: 'Live preview',
+    previewScale: 'Preview size',
     invoiceModeButton: 'Create a quote',
     quoteModeButton: 'Quote mode',
     invoiceTitle: 'Invoice',
@@ -190,6 +193,7 @@ function App() {
   const [language, setLanguage] = useState('et');
   const [companyId, setCompanyId] = useState('skycorp');
   const [currency, setCurrency] = useState('EUR');
+  const [previewScale, setPreviewScale] = useState(90);
   const [autosaveMsg, setAutosaveMsg] = useState(false);
   const [invoiceData, setInvoiceData] = useState(loadSavedData);
 
@@ -350,13 +354,33 @@ function App() {
                 <InvoiceForm data={invoiceData} onDataChange={handleDataChange} labels={labels} isQuote={isQuote} />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }} sx={{ p: 0, overflow: 'auto' }}>
-                <Typography variant="h6" sx={{ mb: 0 }}>{labels.livePreview}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, pr: 1 }}>
+                  <Typography variant="h6" sx={{ whiteSpace: 'nowrap' }}>{labels.livePreview}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                    {labels.previewScale}
+                  </Typography>
+                  <Slider
+                    aria-label={labels.previewScale}
+                    value={previewScale}
+                    onChange={(_, value) => setPreviewScale(value)}
+                    min={50}
+                    max={100}
+                    step={5}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value}%`}
+                    sx={{ minWidth: 120, maxWidth: 220 }}
+                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 38 }}>
+                    {previewScale}%
+                  </Typography>
+                </Box>
                 <InvoicePreview
                   data={invoiceData}
                   labels={labels}
                   currency={currency}
                   rates={currencyRates}
                   isQuote={isQuote}
+                  scale={previewScale / 100}
                 />
               </Grid>
             </Grid>
