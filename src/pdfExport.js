@@ -51,11 +51,22 @@ export const buildPdfDefinition = ({
   const title = isQuote ? labels.quoteTitleDefault : labels.invoiceTitleDefault;
 
   const sellerIdentity = [];
-  if (logoDataUrl) sellerIdentity.push({ image: logoDataUrl, width: 48, margin: [0, 0, 12, 0] });
+  if (logoDataUrl) {
+    sellerIdentity.push({
+      image: logoDataUrl,
+      width: isQuote ? 40 : 48,
+      margin: [0, 0, isQuote ? 9 : 12, 0],
+    });
+  }
   sellerIdentity.push({
     width: '*',
     stack: [
-      { text: data.company.name || '', style: 'companyName' },
+      {
+        text: data.company.name || '',
+        style: 'companyName',
+        fontSize: isQuote ? 13 : 15,
+        noWrap: isQuote,
+      },
       ...(hasValue(data.company.address)
         ? [{ text: data.company.address, style: 'muted', margin: [0, 3, 0, 0] }]
         : []),

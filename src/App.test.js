@@ -23,6 +23,12 @@ test('switches between invoice and quote modes', () => {
   expect(screen.getByText('HINNAPAKKUMINE')).toBeInTheDocument();
   expect(screen.getByTestId('document-title')).toHaveStyle('font-size: 1.7rem');
   expect(screen.getByTestId('document-title')).toHaveStyle('white-space: nowrap');
+  expect(screen.getByTestId('document-header')).toHaveStyle('flex-wrap: nowrap');
+  expect(screen.getByTestId('company-header-logo')).toHaveStyle({ width: '44px', height: '44px' });
+  expect(screen.getByTestId('company-header-name')).toHaveStyle({
+    fontSize: '1.1rem',
+    whiteSpace: 'nowrap',
+  });
   expect(screen.getByTestId('document-header-right')).toHaveStyle({
     marginLeft: 'auto',
     alignItems: 'flex-end',

@@ -82,9 +82,24 @@ test('builds an A4 quote from real text nodes and omits empty optional fields', 
     isQuote: true,
   });
   const serialized = JSON.stringify(definition);
+  const seller = definition.content[1].columns[0].columns;
   const header = definition.content[1].columns[1];
+  const definitionWithLogo = buildPdfDefinition({
+    data,
+    labels,
+    currency: 'EUR',
+    rates: { EUR: 1 },
+    isQuote: true,
+    logoDataUrl: 'data:image/png;base64,AA==',
+  });
+  const quoteLogo = definitionWithLogo.content[1].columns[0].columns[0];
 
   expect(definition.pageSize).toBe('A4');
+  expect(quoteLogo).toMatchObject({ width: 40, margin: [0, 0, 9, 0] });
+  expect(seller[0].stack[0]).toMatchObject({
+    fontSize: 13,
+    noWrap: true,
+  });
   expect(header).toMatchObject({ width: 220, alignment: 'right', unbreakable: true });
   expect(header.stack[0]).toMatchObject({
     text: 'HINNAPAKKUMINE',

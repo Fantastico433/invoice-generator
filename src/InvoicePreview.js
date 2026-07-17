@@ -104,17 +104,41 @@ function InvoicePreview({
           color: '#1f2937',
         }}
       >
-        <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
-          <Grid>
-            <Box display="flex" alignItems="center">
+        <Grid
+          data-testid="document-header"
+          container
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 5, flexWrap: 'nowrap', columnGap: 2 }}
+        >
+          <Grid sx={{ flex: '1 1 auto', minWidth: 0, pr: 2 }}>
+            <Box display="flex" alignItems="center" sx={{ minWidth: 0 }}>
               <Avatar
+                data-testid="company-header-logo"
                 src={data.company.logoUrl || `${process.env.PUBLIC_URL}/logo.png`}
                 alt="Company Logo"
                 crossOrigin="anonymous"
-                sx={{ mr: 2, width: 64, height: 64 }}
+                sx={{
+                  mr: isQuote ? 1.25 : 2,
+                  width: isQuote ? 44 : 64,
+                  height: isQuote ? 44 : 64,
+                  flexShrink: 0,
+                }}
               />
-              <Box>
-                <Typography variant="h5" fontWeight={700} color="#1f2937">{data.company.name}</Typography>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  data-testid="company-header-name"
+                  variant="h5"
+                  fontWeight={700}
+                  color="#1f2937"
+                  sx={{
+                    fontSize: isQuote ? '1.1rem' : undefined,
+                    lineHeight: isQuote ? 1.2 : undefined,
+                    whiteSpace: isQuote ? 'nowrap' : undefined,
+                  }}
+                >
+                  {data.company.name}
+                </Typography>
                 {hasValue(data.company.address) && (
                   <Typography variant="subtitle2" color="#64748b">{data.company.address}</Typography>
                 )}
