@@ -109,8 +109,13 @@ function InvoicePreview({
               </Box>
             </Box>
           </Grid>
-          <Grid>
-            <Box display="flex" alignItems="center" gap={1}>
+          <Grid sx={{ textAlign: isQuote ? 'right' : 'left' }}>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent={isQuote ? 'flex-end' : 'flex-start'}
+              gap={1}
+            >
               <ReceiptLong sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }} />
               <Typography
                 data-testid="document-title"
@@ -122,7 +127,11 @@ function InvoicePreview({
                 {documentTitle}
               </Typography>
             </Box>
-            <Box mt={2}>
+            <Box
+              data-testid="document-metadata"
+              mt={2}
+              sx={{ textAlign: isQuote ? 'right' : 'left' }}
+            >
               {hasValue(documentNumber) && (
                 <Typography variant="body2" color="#1f2937"><strong>{numberLabel}:</strong> {documentNumber}</Typography>
               )}
