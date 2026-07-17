@@ -112,7 +112,13 @@ function InvoicePreview({
           <Grid>
             <Box display="flex" alignItems="center" gap={1}>
               <ReceiptLong sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }} />
-              <Typography variant="h4" fontWeight={700} sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}>
+              <Typography
+                data-testid="document-title"
+                variant="h4"
+                fontWeight={700}
+                style={{ fontSize: isQuote ? '1.7rem' : undefined }}
+                sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}
+              >
                 {documentTitle}
               </Typography>
             </Box>
