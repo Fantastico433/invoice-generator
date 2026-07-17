@@ -28,6 +28,7 @@ function InvoicePreview({
   currency = 'EUR',
   rates = { EUR: 1 },
   isQuote = false,
+  previewId = 'pdf-preview',
 }) {
   const theme = useTheme();
   const taxRate = Number(data.taxRate) || 0;
@@ -57,16 +58,18 @@ function InvoicePreview({
 
   const containerStyles = isExportMode
     ? {
+        boxSizing: 'border-box',
         width: 794,
         minHeight: 1123,
         margin: '0 auto',
-        padding: '64px',
+        padding: '40px',
         backgroundColor: '#fff',
         color: '#1f2937',
         fontSize: 11,
         lineHeight: 1.6,
       }
     : {
+        boxSizing: 'border-box',
         transform: `scale(${scale})`,
         transformOrigin: 'top left',
         width: 794,
@@ -79,7 +82,7 @@ function InvoicePreview({
       };
 
   return (
-    <div id="pdf-preview" style={containerStyles} data-document-type={isQuote ? 'quote' : 'invoice'}>
+    <div id={previewId} style={containerStyles} data-document-type={isQuote ? 'quote' : 'invoice'}>
       <Box
         sx={{
           height: 6,
@@ -91,7 +94,16 @@ function InvoicePreview({
         }}
       />
 
-      <Card elevation={3} sx={{ borderRadius: 3, p: 4, bgcolor: '#fff', color: '#1f2937' }}>
+      <Card
+        elevation={isExportMode ? 0 : 3}
+        sx={{
+          borderRadius: isExportMode ? 0 : 3,
+          boxShadow: isExportMode ? 'none' : undefined,
+          p: 4,
+          bgcolor: '#fff',
+          color: '#1f2937',
+        }}
+      >
         <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 5 }}>
           <Grid>
             <Box display="flex" alignItems="center">
@@ -217,7 +229,15 @@ function InvoicePreview({
         )}
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 5 }}>
-          <Box sx={{ width: 360, p: 3, bgcolor: alpha(isQuote ? '#c084fc' : '#90caf9', 0.12), borderRadius: 2, boxShadow: 1 }}>
+          <Box
+            sx={{
+              width: 360,
+              p: 3,
+              bgcolor: alpha(isQuote ? '#c084fc' : '#90caf9', 0.12),
+              borderRadius: 2,
+              boxShadow: isExportMode ? 'none' : 1,
+            }}
+          >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography variant="body2" color="#64748b">{labels.subtotal}</Typography>
               <Typography variant="body2" color="#1f2937">{formatMoney(subtotal)}</Typography>

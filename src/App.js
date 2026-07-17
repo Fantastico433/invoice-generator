@@ -194,6 +194,7 @@ function App() {
   const [companyId, setCompanyId] = useState('skycorp');
   const [currency, setCurrency] = useState('EUR');
   const [previewScale, setPreviewScale] = useState(90);
+  const [isExporting, setIsExporting] = useState(false);
   const [autosaveMsg, setAutosaveMsg] = useState(false);
   const [invoiceData, setInvoiceData] = useState(loadSavedData);
 
@@ -242,24 +243,76 @@ function App() {
   };
 
   const handleExportPDF = async () => {
-    const element = document.getElementById('pdf-preview');
-    if (!element) return;
-
-    const canvas = await html2canvas(element, {
-      scale: 1.5,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
-    const imgData = canvas.toDataURL('image/jpeg', 0.85);
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'px',
-      format: [canvas.width, canvas.height],
+    setIsExporting(true);
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
 
-    const documentNumber = isQuote ? invoiceData.quoteNumber : invoiceData.invoiceNumber;
-    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-    pdf.save(`${isQuote ? 'quote' : 'invoice'}_${documentNumber || 'draft'}.pdf`);
+    try {
+      const element = document.getElementById('pdf-export-preview');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageHeightPx = Math.floor((canvas.width * pageHeight) / pageWidth);
+      let sourceY = 0;
+      let pageIndex = 0;
+
+      while (sourceY < canvas.height) {
+        const sliceHeight = Math.min(pageHeightPx, canvas.height - sourceY);
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = pageHeightPx;
+        const context = pageCanvas.getContext('2d');
+
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        context.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          canvas.width,
+          sliceHeight
+        );
+
+        if (pageIndex > 0) pdf.addPage('a4', 'portrait');
+        pdf.addImage(
+          pageCanvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          0,
+          pageWidth,
+          pageHeight,
+          undefined,
+          'FAST'
+        );
+
+        sourceY += sliceHeight;
+        pageIndex += 1;
+      }
+
+      const documentNumber = isQuote ? invoiceData.quoteNumber : invoiceData.invoiceNumber;
+      pdf.save(`${isQuote ? 'quote' : 'invoice'}_${documentNumber || 'draft'}.pdf`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -341,7 +394,7 @@ function App() {
               </Grid>
 
               <Grid>
-                <Button variant="contained" onClick={handleExportPDF} size="small">
+                <Button variant="contained" onClick={handleExportPDF} size="small" disabled={isExporting}>
                   {labels.download}
                 </Button>
               </Grid>
@@ -385,6 +438,29 @@ function App() {
               </Grid>
             </Grid>
           </Card>
+
+          {isExporting && (
+            <Box
+              aria-hidden="true"
+              sx={{
+                position: 'fixed',
+                left: '-10000px',
+                top: 0,
+                width: 794,
+                pointerEvents: 'none',
+              }}
+            >
+              <InvoicePreview
+                previewId="pdf-export-preview"
+                data={invoiceData}
+                labels={labels}
+                currency={currency}
+                rates={currencyRates}
+                isQuote={isQuote}
+                isExportMode
+              />
+            </Box>
+          )}
 
           <Snackbar
             open={autosaveMsg}
