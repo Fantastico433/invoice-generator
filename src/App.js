@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -10,9 +10,16 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  List,
+  ListItemButton,
+  ListItemText,
   Select,
   Slider,
   Snackbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -20,10 +27,23 @@ import {
   Brightness4,
   Brightness7,
   Close as CloseIcon,
+  CloudUpload,
+  DeleteOutline,
+  FolderOpen,
+  Login,
+  Logout,
   RequestQuote,
 } from '@mui/icons-material';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
+import {
+  deleteDocument,
+  listDocuments,
+  saveDocument,
+  signIn,
+  signOutUser,
+  watchUser,
+} from './cloudStore';
 
 const logoUrl = `${process.env.PUBLIC_URL}/logo.png`;
 
@@ -32,6 +52,7 @@ const companies = {
     name: 'SKYCORP OÜ',
     address: 'Nurme vkt 17, 61702 Külitse, Eesti',
     regCode: '14211211',
+    vatNumber: '',
     bankAccount: 'EE117700771002605677',
     bic: 'LHVBEE22',
     logoUrl,
@@ -40,6 +61,7 @@ const companies = {
     name: 'SKYCORP Technologies OÜ',
     address: 'Teaduspargi 11, Tartu, Eesti',
     regCode: '16782217',
+    vatNumber: 'EE102638736',
     bankAccount: 'EE767700771009349402',
     bic: 'LHVBEE22',
     logoUrl,
@@ -51,7 +73,7 @@ const currencyRates = { EUR: 1, USD: 1.1 };
 const createInitialData = () => ({
   documentType: 'invoice',
   company: companies.skycorp,
-  client: { name: '', address: '', regCode: '' },
+  client: { name: '', address: '', regCode: '', vatNumber: '' },
   invoiceNumber: '2025043002',
   quoteNumber: `PAK-${new Date().getFullYear()}-0001`,
   date: new Date().toISOString().split('T')[0],
@@ -60,6 +82,7 @@ const createInitialData = () => ({
   bankAccount: companies.skycorp.bankAccount,
   bic: companies.skycorp.bic,
   taxRate: 22,
+  showPaymentQr: false,
   items: [{ description: '', quantity: 1, unit: 'pcs', unitPrice: 0 }],
   notes: '',
   contactPerson: '',
@@ -78,11 +101,17 @@ const loadSavedData = () => {
     const saved = JSON.parse(localStorage.getItem('invoiceData'));
     if (!saved || typeof saved !== 'object') return defaults;
 
+    const savedCompany = { ...defaults.company, ...(saved.company || {}), logoUrl };
+    if (!savedCompany.vatNumber) {
+      const preset = Object.values(companies).find((entry) => entry.regCode === savedCompany.regCode);
+      if (preset) savedCompany.vatNumber = preset.vatNumber;
+    }
+
     return {
       ...defaults,
       ...saved,
       documentType: saved.documentType === 'quote' ? 'quote' : 'invoice',
-      company: { ...defaults.company, ...(saved.company || {}), logoUrl },
+      company: savedCompany,
       client: { ...defaults.client, ...(saved.client || {}) },
       items: Array.isArray(saved.items) && saved.items.length ? saved.items : defaults.items,
     };
@@ -122,6 +151,19 @@ const translations = {
     download: 'Laadi alla',
     supplier: 'Müüja',
     regCode: 'Reg kood',
+    vatNumber: 'KMKR nr',
+    paymentQr: 'Lisa makse-QR',
+    paymentQrTitle: 'Maksa QR-koodiga',
+    paymentQrHint: 'Skaneeri pangarakendusega',
+    signIn: 'Logi sisse',
+    signOut: 'Logi välja',
+    save: 'Salvesta pilve',
+    saved: 'Salvestatud',
+    myDocuments: 'Minu dokumendid',
+    noDocuments: 'Salvestatud dokumente veel ei ole',
+    newDocument: 'Uus dokument',
+    deleteDocument: 'Kustuta',
+    signInHint: 'Logi sisse, et dokumente pilve salvestada',
     amount: 'Summa',
     subtotal: 'Summa KM-ta',
     vat: 'KM',
@@ -168,6 +210,19 @@ const translations = {
     download: 'Download',
     supplier: 'Supplier',
     regCode: 'Reg code',
+    vatNumber: 'VAT number',
+    paymentQr: 'Add payment QR',
+    paymentQrTitle: 'Pay by QR code',
+    paymentQrHint: 'Scan with your banking app',
+    signIn: 'Sign in',
+    signOut: 'Sign out',
+    save: 'Save to cloud',
+    saved: 'Saved',
+    myDocuments: 'My documents',
+    noDocuments: 'No saved documents yet',
+    newDocument: 'New document',
+    deleteDocument: 'Delete',
+    signInHint: 'Sign in to save documents to the cloud',
     amount: 'Amount',
     subtotal: 'Subtotal',
     vat: 'VAT',
@@ -191,10 +246,15 @@ function App() {
   const [language, setLanguage] = useState('et');
   const [companyId, setCompanyId] = useState('skycorp');
   const [currency, setCurrency] = useState('EUR');
-  const [previewScale, setPreviewScale] = useState(90);
+  const [previewScale, setPreviewScale] = useState(60);
   const [isExporting, setIsExporting] = useState(false);
   const [autosaveMsg, setAutosaveMsg] = useState(false);
   const [invoiceData, setInvoiceData] = useState(loadSavedData);
+  const [user, setUser] = useState(null);
+  const [documentId, setDocumentId] = useState(null);
+  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [savedDocuments, setSavedDocuments] = useState([]);
+  const [statusMsg, setStatusMsg] = useState('');
 
   const isQuote = invoiceData.documentType === 'quote';
   const labels = translations[language];
@@ -220,7 +280,40 @@ function App() {
     [darkMode, isQuote]
   );
 
+  useEffect(() => watchUser(setUser), []);
+
   const handleDataChange = (updated) => setInvoiceData(updated);
+
+  const refreshDocuments = useCallback(async (account) => {
+    if (!account) return;
+    setSavedDocuments(await listDocuments(account));
+  }, []);
+
+  const handleSave = async () => {
+    if (!user) return;
+    const savedId = await saveDocument(user, invoiceData, documentId);
+    setDocumentId(savedId);
+    setStatusMsg(labels.saved);
+    refreshDocuments(user);
+  };
+
+  const handleOpenDocuments = async () => {
+    setDocumentsOpen(true);
+    refreshDocuments(user);
+  };
+
+  const handleOpenDocument = (entry) => {
+    setInvoiceData(entry.data);
+    setDocumentId(entry.id);
+    setDocumentsOpen(false);
+  };
+
+  const handleDeleteDocument = async (entry) => {
+    await deleteDocument(entry.id);
+    if (entry.id === documentId) setDocumentId(null);
+    refreshDocuments(user);
+  };
+
 
   const toggleDocumentType = () => {
     setInvoiceData((previous) => ({
@@ -244,13 +337,18 @@ function App() {
     setIsExporting(true);
 
     try {
+      // The on-screen preview already renders the payment QR; reusing that
+      // canvas keeps the PDF in step with what the user is looking at.
+      const qrCanvas = document.querySelector('#pdf-preview canvas');
       const { exportDocumentPdf } = await import('./pdfExport');
+
       await exportDocumentPdf({
         data: invoiceData,
         labels,
         currency,
         rates: currencyRates,
         isQuote,
+        paymentQrDataUrl: qrCanvas ? qrCanvas.toDataURL('image/png') : null,
       });
     } finally {
       setIsExporting(false);
@@ -340,6 +438,36 @@ function App() {
                   {labels.download}
                 </Button>
               </Grid>
+
+              {user ? (
+                <>
+                  <Grid>
+                    <Button startIcon={<CloudUpload />} onClick={handleSave} size="small">
+                      {labels.save}
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button startIcon={<FolderOpen />} onClick={handleOpenDocuments} size="small">
+                      {labels.myDocuments}
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Tooltip title={`${user.email} — ${labels.signOut}`}>
+                      <IconButton onClick={signOutUser} size="small" aria-label={labels.signOut}>
+                        <Logout fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Grid>
+                </>
+              ) : (
+                <Grid>
+                  <Tooltip title={labels.signInHint}>
+                    <Button startIcon={<Login />} onClick={signIn} size="small">
+                      {labels.signIn}
+                    </Button>
+                  </Tooltip>
+                </Grid>
+              )}
             </Grid>
 
             <Divider sx={{ mb: 1 }} />
@@ -380,6 +508,51 @@ function App() {
               </Grid>
             </Grid>
           </Card>
+
+          <Dialog open={documentsOpen} onClose={() => setDocumentsOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>{labels.myDocuments}</DialogTitle>
+            <DialogContent dividers>
+              {savedDocuments.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                  {labels.noDocuments}
+                </Typography>
+              ) : (
+                <List>
+                  {savedDocuments.map((entry) => (
+                    <ListItemButton
+                      key={entry.id}
+                      onClick={() => handleOpenDocument(entry)}
+                      selected={entry.id === documentId}
+                    >
+                      <ListItemText
+                        primary={`${entry.number || labels.newDocument} — ${entry.clientName || ''}`}
+                        secondary={`${entry.date || ''} · ${(entry.total || 0).toFixed(2)} EUR · ${
+                          entry.documentType === 'quote' ? labels.quoteTitleDefault : labels.invoiceTitleDefault
+                        }`}
+                      />
+                      <IconButton
+                        edge="end"
+                        aria-label={labels.deleteDocument}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteDocument(entry);
+                        }}
+                      >
+                        <DeleteOutline fontSize="small" />
+                      </IconButton>
+                    </ListItemButton>
+                  ))}
+                </List>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <Snackbar
+            open={Boolean(statusMsg)}
+            autoHideDuration={2000}
+            onClose={() => setStatusMsg('')}
+            message={statusMsg}
+          />
 
           <Snackbar
             open={autosaveMsg}

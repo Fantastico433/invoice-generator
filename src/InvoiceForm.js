@@ -3,7 +3,9 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
+  FormControlLabel,
   Grid,
   IconButton,
   TextField,
@@ -19,6 +21,10 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
   const handleNumberChange = (field) => (event) => {
     const value = parseFloat(event.target.value);
     onDataChange({ ...data, [field]: Number.isNaN(value) ? 0 : value });
+  };
+
+  const handleCompanyChange = (field) => (event) => {
+    onDataChange({ ...data, company: { ...data.company, [field]: event.target.value } });
   };
 
   const handleClientChange = (field) => (event) => {
@@ -63,7 +69,7 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                 {documentTitle} {labels.details}
               </Typography>
               <Grid container spacing={1}>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                <Grid size={{ xs: 12, sm: 8 }}>
                   <TextField
                     label={numberLabel}
                     value={data[numberField] || ''}
@@ -71,7 +77,16 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                     fullWidth
                   />
                 </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    label={labels.taxRate}
+                    type="number"
+                    value={data.taxRate}
+                    onChange={handleNumberChange('taxRate')}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     label={labels.date}
                     type="date"
@@ -81,7 +96,7 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                     fullWidth
                   />
                 </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     label={deadlineLabel}
                     type="date"
@@ -91,12 +106,24 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                     fullWidth
                   />
                 </Grid>
+                {!isQuote && (
+                  <Grid size={12}>
+                    <FormControlLabel
+                      control={(
+                        <Checkbox
+                          checked={Boolean(data.showPaymentQr)}
+                          onChange={(event) => onDataChange({ ...data, showPaymentQr: event.target.checked })}
+                        />
+                      )}
+                      label={labels.paymentQr}
+                    />
+                  </Grid>
+                )}
                 <Grid size={12}>
                   <TextField
-                    label={labels.taxRate}
-                    type="number"
-                    value={data.taxRate}
-                    onChange={handleNumberChange('taxRate')}
+                    label={`${labels.supplier} — ${labels.vatNumber}`}
+                    value={data.company.vatNumber || ''}
+                    onChange={handleCompanyChange('vatNumber')}
                     fullWidth
                   />
                 </Grid>
@@ -112,8 +139,11 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                 <Grid size={12}>
                   <TextField label={labels.address} value={data.client.address || ''} onChange={handleClientChange('address')} fullWidth />
                 </Grid>
-                <Grid size={12}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField label={labels.regCode} value={data.client.regCode || ''} onChange={handleClientChange('regCode')} fullWidth />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField label={labels.vatNumber} value={data.client.vatNumber || ''} onChange={handleClientChange('vatNumber')} fullWidth />
                 </Grid>
               </Grid>
             </Grid>

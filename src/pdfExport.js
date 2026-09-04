@@ -32,6 +32,7 @@ export const buildPdfDefinition = ({
   rates,
   isQuote,
   logoDataUrl = null,
+  paymentQrDataUrl = null,
 }) => {
   const accent = isQuote ? '#7c3aed' : '#1976d2';
   const accentLight = isQuote ? '#f5f0ff' : '#eef6fd';
@@ -90,6 +91,9 @@ export const buildPdfDefinition = ({
     if (hasValue(party.address)) rows.push({ text: party.address });
     if (hasValue(party.regCode)) {
       rows.push({ text: `${labels.regCode}: ${party.regCode}` });
+    }
+    if (hasValue(party.vatNumber)) {
+      rows.push({ text: `${labels.vatNumber}: ${party.vatNumber}` });
     }
     if (isCompany && hasValue(data.bic)) rows.push({ text: `BIC: ${data.bic}` });
     return rows;
@@ -248,6 +252,16 @@ export const buildPdfDefinition = ({
 
   content.push({
     columns: [
+      paymentQrDataUrl
+        ? {
+            width: 'auto',
+            stack: [
+              { text: labels.paymentQrTitle, bold: true, margin: [0, 0, 0, 5] },
+              { image: paymentQrDataUrl, width: 96 },
+              { text: labels.paymentQrHint, style: 'muted', margin: [0, 4, 0, 0] },
+            ],
+          }
+        : { width: '*', text: '' },
       { width: '*', text: '' },
       {
         width: 230,
@@ -305,7 +319,7 @@ export const buildPdfDefinition = ({
   };
 };
 
-export const exportDocumentPdf = async ({ data, labels, currency, rates, isQuote }) => {
+export const exportDocumentPdf = async ({ data, labels, currency, rates, isQuote, paymentQrDataUrl = null }) => {
   const logoDataUrl = await loadImageAsDataUrl(data.company.logoUrl);
   const definition = buildPdfDefinition({
     data,
@@ -314,6 +328,7 @@ export const exportDocumentPdf = async ({ data, labels, currency, rates, isQuote
     rates,
     isQuote,
     logoDataUrl,
+    paymentQrDataUrl,
   });
   const documentNumber = isQuote ? data.quoteNumber : data.invoiceNumber;
   const fileName = `${isQuote ? 'quote' : 'invoice'}_${documentNumber || 'draft'}.pdf`;

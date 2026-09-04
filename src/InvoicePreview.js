@@ -16,8 +16,32 @@ import {
   useTheme,
 } from '@mui/material';
 import { Business, Person, ReceiptLong } from '@mui/icons-material';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const hasValue = (value) => value !== undefined && value !== null && String(value).trim() !== '';
+
+// EPC069-12 ("SEPA Credit Transfer") payload, the format European banking apps
+// read from a QR code. Euro only, and the amount must stay within 0.01-999999999.99.
+const buildSepaQrPayload = ({ name, iban, bic, amount, reference }) => {
+  const cleanIban = String(iban || '').replace(/\s/g, '');
+  if (!cleanIban || !hasValue(name)) return null;
+  if (!(amount > 0) || amount > 999999999.99) return null;
+
+  return [
+    'BCD',
+    '002',
+    '1',
+    'SCT',
+    String(bic || '').replace(/\s/g, ''),
+    String(name).slice(0, 70),
+    cleanIban,
+    'EUR' + amount.toFixed(2),
+    '',
+    '',
+    String(reference || '').slice(0, 140),
+    '',
+  ].join(String.fromCharCode(10));
+};
 
 function InvoicePreview({
   data,
@@ -42,6 +66,17 @@ function InvoicePreview({
   const formatMoney = (value) => `${(value * rate).toFixed(2)} ${currency}`;
 
   const documentNumber = isQuote ? data.quoteNumber : data.invoiceNumber;
+  // Only invoices in euro can carry a scannable payment code: the EPC format is
+  // euro-only, so a converted total would tell the bank the wrong number.
+  const paymentQrPayload = !isQuote && data.showPaymentQr && currency === 'EUR'
+    ? buildSepaQrPayload({
+        name: data.company.name,
+        iban: data.bankAccount,
+        bic: data.bic,
+        amount: total,
+        reference: documentNumber ? `${labels.invoiceNumber} ${documentNumber}` : '',
+      })
+    : null;
   const documentTitle = isQuote ? labels.quoteTitleDefault : labels.invoiceTitleDefault;
   const numberLabel = isQuote ? labels.quoteNumber : labels.invoiceNumber;
   const deadlineValue = isQuote ? data.validUntil : data.dueDate;
@@ -208,6 +243,7 @@ function InvoicePreview({
             {hasValue(data.company.name) && <Typography variant="body2" color="#1f2937">{data.company.name}</Typography>}
             {hasValue(data.company.address) && <Typography variant="body2" color="#1f2937">{data.company.address}</Typography>}
             {hasValue(data.company.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.company.regCode}</Typography>}
+            {hasValue(data.company.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.company.vatNumber}</Typography>}
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: 'right', pr: { xs: 1, md: 4 } }}>
@@ -218,6 +254,7 @@ function InvoicePreview({
             {hasValue(data.client.name) && <Typography variant="body2" color="#1f2937">{data.client.name}</Typography>}
             {hasValue(data.client.address) && <Typography variant="body2" color="#1f2937">{data.client.address}</Typography>}
             {hasValue(data.client.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.client.regCode}</Typography>}
+            {hasValue(data.client.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.client.vatNumber}</Typography>}
           </Grid>
         </Grid>
 
@@ -268,7 +305,18 @@ function InvoicePreview({
           </Box>
         )}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 5 }}>
+        <Box sx={{ display: 'flex', justifyContent: paymentQrPayload ? 'space-between' : 'flex-end', alignItems: 'flex-start', gap: 3, mb: 5 }}>
+          {paymentQrPayload && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight={700} color="#1f2937" gutterBottom>
+                {labels.paymentQrTitle}
+              </Typography>
+              <QRCodeCanvas value={paymentQrPayload} size={116} level="M" bgColor="#ffffff" fgColor="#1f2937" />
+              <Typography variant="caption" display="block" color="#64748b" sx={{ mt: 0.5 }}>
+                {labels.paymentQrHint}
+              </Typography>
+            </Box>
+          )}
           <Box
             sx={{
               width: 360,

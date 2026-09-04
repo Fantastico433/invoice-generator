@@ -72,8 +72,8 @@ test('lets the user resize the live document preview', () => {
   render(<App />);
 
   const scaleSlider = screen.getByRole('slider', { name: 'Eelvaate suurus' });
-  expect(scaleSlider).toHaveValue('90');
-  expect(document.getElementById('pdf-preview')).toHaveStyle('transform: scale(0.9)');
+  expect(scaleSlider).toHaveValue('60');
+  expect(document.getElementById('pdf-preview')).toHaveStyle('transform: scale(0.6)');
 
   fireEvent.change(scaleSlider, { target: { value: '70' } });
 
