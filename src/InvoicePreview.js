@@ -77,6 +77,14 @@ function InvoicePreview({
         reference: documentNumber ? `${labels.invoiceNumber} ${documentNumber}` : '',
       })
     : null;
+  // A column whose every cell is empty says nothing, so its heading should not
+  // appear either. The money columns always carry a number and always stay.
+  const anyItemHas = (field) => data.items.some((item) => hasValue(item[field]));
+  const showDescription = anyItemHas('description');
+  const showUnit = anyItemHas('unit');
+  const hasPartyDetails = (party) =>
+    hasValue(party.name) || hasValue(party.address) || hasValue(party.regCode) || hasValue(party.vatNumber);
+
   const documentTitle = isQuote ? labels.quoteTitleDefault : labels.invoiceTitleDefault;
   const numberLabel = isQuote ? labels.quoteNumber : labels.invoiceNumber;
   const deadlineValue = isQuote ? data.validUntil : data.dueDate;
@@ -236,10 +244,12 @@ function InvoicePreview({
 
         <Grid container justifyContent="space-between" spacing={4} sx={{ mb: 5 }}>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <Business fontSize="small" color="action" />
-              <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.supplier}</Typography>
-            </Box>
+            {hasPartyDetails(data.company) && (
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <Business fontSize="small" color="action" />
+                <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.supplier}</Typography>
+              </Box>
+            )}
             {hasValue(data.company.name) && <Typography variant="body2" color="#1f2937">{data.company.name}</Typography>}
             {hasValue(data.company.address) && <Typography variant="body2" color="#1f2937">{data.company.address}</Typography>}
             {hasValue(data.company.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.company.regCode}</Typography>}
@@ -247,10 +257,12 @@ function InvoicePreview({
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: 'right', pr: { xs: 1, md: 4 } }}>
-            <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1} mb={1}>
-              <Person fontSize="small" color="action" />
-              <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.client}</Typography>
-            </Box>
+            {hasPartyDetails(data.client) && (
+              <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1} mb={1}>
+                <Person fontSize="small" color="action" />
+                <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.client}</Typography>
+              </Box>
+            )}
             {hasValue(data.client.name) && <Typography variant="body2" color="#1f2937">{data.client.name}</Typography>}
             {hasValue(data.client.address) && <Typography variant="body2" color="#1f2937">{data.client.address}</Typography>}
             {hasValue(data.client.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.client.regCode}</Typography>}
@@ -262,9 +274,9 @@ function InvoicePreview({
           <Table size="small" sx={{ '& th': { bgcolor: '#f1f5f9', color: '#1f2937' }, '& td': { color: '#1f2937' } }}>
             <TableHead>
               <TableRow>
-                <TableCell>{labels.description}</TableCell>
+                {showDescription && <TableCell>{labels.description}</TableCell>}
                 <TableCell align="right">{labels.quantity}</TableCell>
-                <TableCell align="right">{labels.unit}</TableCell>
+                {showUnit && <TableCell align="right">{labels.unit}</TableCell>}
                 <TableCell align="right">{labels.unitPrice}</TableCell>
                 <TableCell align="right">{labels.tax}</TableCell>
                 <TableCell align="right">{labels.amount}</TableCell>
@@ -273,9 +285,9 @@ function InvoicePreview({
             <TableBody>
               {data.items.map((item, index) => (
                 <TableRow key={index} sx={{ '&:nth-of-type(odd)': { bgcolor: '#f8fafc' } }}>
-                  <TableCell sx={{ py: 2 }}>{item.description}</TableCell>
+                  {showDescription && <TableCell sx={{ py: 2 }}>{item.description}</TableCell>}
                   <TableCell align="right" sx={{ py: 2 }}>{item.quantity}</TableCell>
-                  <TableCell align="right" sx={{ py: 2 }}>{item.unit}</TableCell>
+                  {showUnit && <TableCell align="right" sx={{ py: 2 }}>{item.unit}</TableCell>}
                   <TableCell align="right" sx={{ py: 2 }}>{formatMoney(Number(item.unitPrice) || 0)}</TableCell>
                   <TableCell align="right" sx={{ py: 2 }}>{taxRate.toFixed(1)}%</TableCell>
                   <TableCell align="right" sx={{ py: 2 }}>{formatMoney((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</TableCell>

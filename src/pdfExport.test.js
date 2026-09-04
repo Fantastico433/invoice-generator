@@ -133,3 +133,30 @@ test('downloads the text document with the quote file name', async () => {
   );
   expect(download).toHaveBeenCalledWith('quote_PAK-2026-1.pdf');
 });
+
+test('drops headings and columns that would have nothing under them', () => {
+  const definition = buildPdfDefinition({
+    data: {
+      ...data,
+      client: { name: '', address: '', regCode: '', vatNumber: '' },
+      items: [{ description: '', quantity: 1, unit: '', unitPrice: 1750 }],
+    },
+    labels: { ...labels, vatNumber: 'KMKR nr' },
+    currency: 'EUR',
+    rates: { EUR: 1 },
+    isQuote: true,
+  });
+
+  const table = definition.content.find((node) => node.table && node.table.headerRows);
+  const headers = table.table.body[0].map((cell) => cell.text);
+
+  expect(headers).not.toContain(labels.description);
+  expect(headers).not.toContain(labels.unit);
+  expect(headers).toContain(labels.amount);
+  expect(table.table.widths).toHaveLength(headers.length);
+
+  const parties = definition.content.find((node) => node.columns && node.columns[0].stack);
+  const headings = parties.columns.map((column) => column.stack[0] && column.stack[0].text);
+  expect(headings).toContain(labels.supplier);
+  expect(headings).not.toContain(labels.client);
+});

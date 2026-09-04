@@ -86,6 +86,11 @@ export const buildPdfDefinition = ({
   }
 
   const partyStack = (heading, party, isCompany = false) => {
+    const hasDetails =
+      hasValue(party.name) || hasValue(party.address) || hasValue(party.regCode) || hasValue(party.vatNumber);
+    // Without a single filled field the heading would stand on its own, so drop it too.
+    if (!hasDetails) return [];
+
     const rows = [{ text: heading, style: 'sectionHeading', margin: [0, 0, 0, 5] }];
     if (hasValue(party.name)) rows.push({ text: party.name });
     if (hasValue(party.address)) rows.push({ text: party.address });
@@ -99,13 +104,18 @@ export const buildPdfDefinition = ({
     return rows;
   };
 
+  // A column whose every cell is empty says nothing, so its heading goes too.
+  const anyItemHas = (field) => data.items.some((item) => hasValue(item[field]));
+  const showDescription = anyItemHas('description');
+  const showUnit = anyItemHas('unit');
+
   const itemRows = data.items.map((item) => {
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     return [
-      { text: item.description || '', alignment: 'left' },
+      ...(showDescription ? [{ text: item.description || '', alignment: 'left' }] : [{ text: '' }]),
       { text: String(quantity), alignment: 'right' },
-      { text: item.unit || '', alignment: 'right' },
+      ...(showUnit ? [{ text: item.unit || '', alignment: 'right' }] : []),
       { text: money(unitPrice), alignment: 'right', noWrap: true },
       { text: `${taxRate.toFixed(1)}%`, alignment: 'right', noWrap: true },
       { text: money(quantity * unitPrice), alignment: 'right', noWrap: true },
@@ -178,12 +188,14 @@ export const buildPdfDefinition = ({
     {
       table: {
         headerRows: 1,
-        widths: ['*', 40, 40, 70, 40, 78],
+        widths: ['*', 40, ...(showUnit ? [40] : []), 70, 40, 78],
         body: [
           [
-            labels.description,
+            // The leading column keeps its flexible width even when the
+            // description is dropped, so the money columns stay on the right.
+            showDescription ? labels.description : '',
             labels.quantity,
-            labels.unit,
+            ...(showUnit ? [labels.unit] : []),
             labels.unitPrice,
             labels.tax,
             labels.amount,
