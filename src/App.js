@@ -127,7 +127,9 @@ const translations = {
     livePreview: 'Eelvaade',
     previewScale: 'Eelvaate suurus',
     invoiceModeButton: 'Koosta hinnapakkumine',
-    quoteModeButton: 'Hinnapakkumise režiim',
+    quoteModeButton: 'Koosta arve',
+    modeInvoice: 'Koostad arvet',
+    modeQuote: 'Koostad hinnapakkumist',
     invoiceTitle: 'Arve',
     invoiceTitleDefault: 'ARVE',
     quoteTitle: 'Hinnapakkumine',
@@ -186,7 +188,9 @@ const translations = {
     livePreview: 'Live preview',
     previewScale: 'Preview size',
     invoiceModeButton: 'Create a quote',
-    quoteModeButton: 'Quote mode',
+    quoteModeButton: 'Create an invoice',
+    modeInvoice: 'Editing an invoice',
+    modeQuote: 'Editing a quote',
     invoiceTitle: 'Invoice',
     invoiceTitleDefault: 'INVOICE',
     quoteTitle: 'Quote',
@@ -380,6 +384,14 @@ function App() {
             <Grid container spacing={1.5} justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
               <Grid>
                 <Typography variant="h5">{labels.appTitle}</Typography>
+                <Typography
+                  data-testid="document-mode-status"
+                  variant="body2"
+                  fontWeight={600}
+                  sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}
+                >
+                  {isQuote ? labels.modeQuote : labels.modeInvoice}
+                </Typography>
               </Grid>
 
               <Grid>

@@ -19,7 +19,8 @@ test('switches between invoice and quote modes', () => {
   expect(screen.getByText('ARVE')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /koosta hinnapakkumine/i }));
 
-  expect(screen.getByTestId('document-mode-toggle')).toHaveTextContent('Hinnapakkumise režiim');
+  expect(screen.getByTestId('document-mode-toggle')).toHaveTextContent('Koosta arve');
+  expect(screen.getByTestId('document-mode-status')).toHaveTextContent('Koostad hinnapakkumist');
   expect(screen.getByText('HINNAPAKKUMINE')).toBeInTheDocument();
   expect(screen.getByTestId('document-title')).toHaveStyle('font-size: 1.7rem');
   expect(screen.getByTestId('document-title')).toHaveStyle('white-space: nowrap');
@@ -63,7 +64,7 @@ test('keeps invoice data when quote mode is toggled off again', () => {
   fireEvent.change(invoiceNumber, { target: { value: 'ARV-2026-0042' } });
 
   fireEvent.click(screen.getByRole('button', { name: /koosta hinnapakkumine/i }));
-  fireEvent.click(screen.getByRole('button', { name: /hinnapakkumise režiim/i }));
+  fireEvent.click(screen.getByRole('button', { name: /koosta arve/i }));
 
   expect(screen.getByLabelText('Arve nr')).toHaveValue('ARV-2026-0042');
 });
