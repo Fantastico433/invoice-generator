@@ -28,6 +28,7 @@ import {
   Brightness7,
   Close as CloseIcon,
   CloudUpload,
+  RestartAlt,
   DeleteOutline,
   FolderOpen,
   Login,
@@ -81,7 +82,7 @@ const createInitialData = () => ({
   validUntil: '',
   bankAccount: companies.skycorp.bankAccount,
   bic: companies.skycorp.bic,
-  taxRate: 22,
+  taxRate: 24,
   showPaymentQr: false,
   items: [{ description: '', quantity: 1, unit: 'pcs', unitPrice: 0 }],
   notes: '',
@@ -166,6 +167,9 @@ const translations = {
     newDocument: 'Uus dokument',
     deleteDocument: 'Kustuta',
     signInHint: 'Logi sisse, et dokumente pilve salvestada',
+    clearFields: 'Tühjenda väljad',
+    cleared: 'Väljad tühjendatud',
+    undo: 'Võta tagasi',
     amount: 'Summa',
     subtotal: 'Summa KM-ta',
     vat: 'KM',
@@ -227,6 +231,9 @@ const translations = {
     newDocument: 'New document',
     deleteDocument: 'Delete',
     signInHint: 'Sign in to save documents to the cloud',
+    clearFields: 'Clear fields',
+    cleared: 'Fields cleared',
+    undo: 'Undo',
     amount: 'Amount',
     subtotal: 'Subtotal',
     vat: 'VAT',
@@ -259,6 +266,7 @@ function App() {
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [savedDocuments, setSavedDocuments] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
+  const [undoState, setUndoState] = useState(null);
 
   const isQuote = invoiceData.documentType === 'quote';
   const labels = translations[language];
@@ -299,6 +307,29 @@ function App() {
     setDocumentId(savedId);
     setStatusMsg(labels.saved);
     refreshDocuments(user);
+  };
+
+  const handleClearFields = () => {
+    // Keep the company block and the document kind: those are settings, not content.
+    const fresh = createInitialData();
+    setUndoState({ data: invoiceData, documentId });
+    setInvoiceData({
+      ...fresh,
+      documentType: invoiceData.documentType,
+      company: invoiceData.company,
+      bankAccount: invoiceData.bankAccount,
+      bic: invoiceData.bic,
+    });
+    setDocumentId(null);
+    setStatusMsg(labels.cleared);
+  };
+
+  const handleUndoClear = () => {
+    if (!undoState) return;
+    setInvoiceData(undoState.data);
+    setDocumentId(undoState.documentId);
+    setUndoState(null);
+    setStatusMsg('');
   };
 
   const handleOpenDocuments = async () => {
@@ -451,6 +482,12 @@ function App() {
                 </Button>
               </Grid>
 
+              <Grid>
+                <Button startIcon={<RestartAlt />} onClick={handleClearFields} size="small">
+                  {labels.clearFields}
+                </Button>
+              </Grid>
+
               {user ? (
                 <>
                   <Grid>
@@ -561,9 +598,14 @@ function App() {
 
           <Snackbar
             open={Boolean(statusMsg)}
-            autoHideDuration={2000}
+            autoHideDuration={undoState ? 8000 : 2000}
             onClose={() => setStatusMsg('')}
             message={statusMsg}
+            action={undoState ? (
+              <Button color="secondary" size="small" onClick={handleUndoClear}>
+                {labels.undo}
+              </Button>
+            ) : null}
           />
 
           <Snackbar
