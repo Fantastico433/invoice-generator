@@ -147,13 +147,23 @@ test('drops headings and columns that would have nothing under them', () => {
     isQuote: true,
   });
 
-  const table = definition.content.find((node) => node.table && node.table.headerRows);
+  // With no description the table is nested inside a right-aligning columns node.
+  const findTable = (nodes) => nodes.reduce((found, node) => {
+    if (found) return found;
+    if (node.table && node.table.headerRows) return node;
+    return node.columns ? findTable(node.columns) : null;
+  }, null);
+
+  const table = findTable(definition.content);
   const headers = table.table.body[0].map((cell) => cell.text);
 
   expect(headers).not.toContain(labels.description);
   expect(headers).not.toContain(labels.unit);
   expect(headers).toContain(labels.amount);
+  expect(headers).not.toContain('');
   expect(table.table.widths).toHaveLength(headers.length);
+  expect(table.table.widths).not.toContain('*');
+  expect(table.table.body[1]).toHaveLength(headers.length);
 
   const parties = definition.content.find((node) => node.columns && node.columns[0].stack);
   const headings = parties.columns.map((column) => column.stack[0] && column.stack[0].text);

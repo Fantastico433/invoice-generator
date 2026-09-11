@@ -113,7 +113,7 @@ export const buildPdfDefinition = ({
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     return [
-      ...(showDescription ? [{ text: item.description || '', alignment: 'left' }] : [{ text: '' }]),
+      ...(showDescription ? [{ text: item.description || '', alignment: 'left' }] : []),
       { text: String(quantity), alignment: 'right' },
       ...(showUnit ? [{ text: item.unit || '', alignment: 'right' }] : []),
       { text: money(unitPrice), alignment: 'right', noWrap: true },
@@ -131,6 +131,55 @@ export const buildPdfDefinition = ({
     [labels.warranty, data.warranty],
     [labels.terms, data.terms],
   ].filter(([, value]) => hasValue(value));
+
+  const itemsTable = {
+    table: {
+      headerRows: 1,
+      widths: [
+        ...(showDescription ? ['*'] : []),
+        40,
+        ...(showUnit ? [40] : []),
+        70,
+        40,
+        78,
+      ],
+      body: [
+        [
+          ...(showDescription ? [labels.description] : []),
+          labels.quantity,
+          ...(showUnit ? [labels.unit] : []),
+          labels.unitPrice,
+          labels.tax,
+          labels.amount,
+        ].map((text, index) => ({
+          text,
+          bold: true,
+          color: '#334155',
+          alignment: showDescription && index === 0 ? 'left' : 'right',
+        })),
+        ...itemRows,
+      ],
+    },
+    layout: {
+      fillColor: (rowIndex) => (rowIndex === 0 ? '#f1f5f9' : rowIndex % 2 ? '#ffffff' : '#f8fafc'),
+      hLineColor: () => '#d7dee8',
+      vLineColor: () => '#e5eaf0',
+      paddingTop: () => 7,
+      paddingBottom: () => 7,
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+    },
+    margin: [0, 0, 0, 20],
+  };
+
+  // Without a description column the table no longer fills the page, so it is
+  // pushed to the right edge rather than left dangling with an empty cell.
+  const itemsBlock = showDescription
+    ? itemsTable
+    : {
+        columns: [{ width: '*', text: '' }, { ...itemsTable, width: 'auto' }],
+        margin: [0, 0, 0, 20],
+      };
 
   const content = [
     {
@@ -185,40 +234,7 @@ export const buildPdfDefinition = ({
       columnGap: 35,
       margin: [0, 0, 0, 22],
     },
-    {
-      table: {
-        headerRows: 1,
-        widths: ['*', 40, ...(showUnit ? [40] : []), 70, 40, 78],
-        body: [
-          [
-            // The leading column keeps its flexible width even when the
-            // description is dropped, so the money columns stay on the right.
-            showDescription ? labels.description : '',
-            labels.quantity,
-            ...(showUnit ? [labels.unit] : []),
-            labels.unitPrice,
-            labels.tax,
-            labels.amount,
-          ].map((text, index) => ({
-            text,
-            bold: true,
-            color: '#334155',
-            alignment: index === 0 ? 'left' : 'right',
-          })),
-          ...itemRows,
-        ],
-      },
-      layout: {
-        fillColor: (rowIndex) => (rowIndex === 0 ? '#f1f5f9' : rowIndex % 2 ? '#ffffff' : '#f8fafc'),
-        hLineColor: () => '#d7dee8',
-        vLineColor: () => '#e5eaf0',
-        paddingTop: () => 7,
-        paddingBottom: () => 7,
-        paddingLeft: () => 6,
-        paddingRight: () => 6,
-      },
-      margin: [0, 0, 0, 20],
-    },
+    itemsBlock,
   ];
 
   if (isQuote && quoteFields.length) {
