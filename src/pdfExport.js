@@ -33,6 +33,7 @@ export const buildPdfDefinition = ({
   isQuote,
   logoDataUrl = null,
   paymentQrDataUrl = null,
+  paymentLink = '',
 }) => {
   const accent = isQuote ? '#7c3aed' : '#1976d2';
   const accentLight = isQuote ? '#f5f0ff' : '#eef6fd';
@@ -268,6 +269,22 @@ export const buildPdfDefinition = ({
     });
   }
 
+  if (data.reverseCharge) {
+    content.push({
+      table: { widths: ['*'], body: [[{ text: labels.reverseChargeNote, bold: true }]] },
+      layout: {
+        fillColor: () => '#f4f6f9',
+        hLineColor: () => '#cbd5e1',
+        vLineColor: () => '#cbd5e1',
+        paddingTop: () => 8,
+        paddingBottom: () => 8,
+        paddingLeft: () => 10,
+        paddingRight: () => 10,
+      },
+      margin: [0, 0, 0, 18],
+    });
+  }
+
   if (hasValue(data.notes)) {
     content.push({
       stack: [
@@ -286,7 +303,12 @@ export const buildPdfDefinition = ({
             stack: [
               { text: labels.paymentQrTitle, bold: true, margin: [0, 0, 0, 5] },
               { image: paymentQrDataUrl, width: 96 },
-              { text: labels.paymentQrHint, style: 'muted', margin: [0, 4, 0, 0] },
+              paymentLink
+                ? { text: labels.paymentLinkHint, style: 'muted', margin: [0, 4, 0, 0] }
+                : { text: labels.paymentQrHint, style: 'muted', margin: [0, 4, 0, 0] },
+              ...(paymentLink
+                ? [{ text: paymentLink, link: paymentLink, color: accent, fontSize: 8, margin: [0, 2, 0, 0] }]
+                : []),
             ],
           }
         : { width: '*', text: '' },
@@ -348,6 +370,7 @@ export const buildPdfDefinition = ({
 };
 
 export const exportDocumentPdf = async ({ data, labels, currency, rates, isQuote, paymentQrDataUrl = null }) => {
+  const paymentLink = hasValue(data.paymentLink) ? String(data.paymentLink).trim() : '';
   const logoDataUrl = await loadImageAsDataUrl(data.company.logoUrl);
   const definition = buildPdfDefinition({
     data,
@@ -357,6 +380,7 @@ export const exportDocumentPdf = async ({ data, labels, currency, rates, isQuote
     isQuote,
     logoDataUrl,
     paymentQrDataUrl,
+    paymentLink,
   });
   const documentNumber = isQuote ? data.quoteNumber : data.invoiceNumber;
   const fileName = `${isQuote ? 'quote' : 'invoice'}_${documentNumber || 'draft'}.pdf`;

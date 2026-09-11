@@ -170,3 +170,26 @@ test('drops headings and columns that would have nothing under them', () => {
   expect(headings).toContain(labels.supplier);
   expect(headings).not.toContain(labels.client);
 });
+
+test('prints the reverse charge note only when it is switched on', () => {
+  const withNote = buildPdfDefinition({
+    data: { ...data, reverseCharge: true, taxRate: 0 },
+    labels: { ...labels, reverseChargeNote: 'Pöördmaksustamine — teenuse saaja tasub.' },
+    currency: 'EUR',
+    rates: { EUR: 1 },
+    isQuote: true,
+  });
+
+  const serialized = JSON.stringify(withNote);
+  expect(serialized).toContain('Pöördmaksustamine');
+
+  const withoutNote = buildPdfDefinition({
+    data: { ...data, reverseCharge: false },
+    labels: { ...labels, reverseChargeNote: 'Pöördmaksustamine — teenuse saaja tasub.' },
+    currency: 'EUR',
+    rates: { EUR: 1 },
+    isQuote: true,
+  });
+
+  expect(JSON.stringify(withoutNote)).not.toContain('Pöördmaksustamine');
+});

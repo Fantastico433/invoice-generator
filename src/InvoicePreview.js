@@ -68,15 +68,22 @@ function InvoicePreview({
   const documentNumber = isQuote ? data.quoteNumber : data.invoiceNumber;
   // Only invoices in euro can carry a scannable payment code: the EPC format is
   // euro-only, so a converted total would tell the bank the wrong number.
-  const paymentQrPayload = !isQuote && data.showPaymentQr && currency === 'EUR'
-    ? buildSepaQrPayload({
-        name: data.company.name,
-        iban: data.bankAccount,
-        bic: data.bic,
-        amount: total,
-        reference: documentNumber ? `${labels.invoiceNumber} ${documentNumber}` : '',
-      })
+  // A payment link wins over the EPC payload: Estonian banking apps read a URL
+  // and ignore EPC, while EPC still serves euro-area apps that support it.
+  const paymentLink = hasValue(data.paymentLink) ? String(data.paymentLink).trim() : '';
+  const paymentQrPayload = !isQuote && data.showPaymentQr
+    ? paymentLink
+      || (currency === 'EUR'
+        ? buildSepaQrPayload({
+            name: data.company.name,
+            iban: data.bankAccount,
+            bic: data.bic,
+            amount: total,
+            reference: documentNumber ? `${labels.invoiceNumber} ${documentNumber}` : '',
+          })
+        : null)
     : null;
+  const paymentQrHint = paymentLink ? labels.paymentLinkHint : labels.paymentQrHint;
   // A column whose every cell is empty says nothing, so its heading should not
   // appear either. The money columns always carry a number and always stay.
   const anyItemHas = (field) => data.items.some((item) => hasValue(item[field]));
@@ -310,6 +317,14 @@ function InvoicePreview({
           </Box>
         )}
 
+        {data.reverseCharge && (
+          <Box sx={{ mb: 4, p: 2, borderRadius: 2, border: '1px solid #cbd5e1', bgcolor: '#f8fafc' }}>
+            <Typography variant="body2" fontWeight={600} color="#1f2937">
+              {labels.reverseChargeNote}
+            </Typography>
+          </Box>
+        )}
+
         {hasValue(data.notes) && (
           <Box sx={{ mb: 4 }}>
             <Typography variant="subtitle2" color="#1f2937" gutterBottom>{labels.notes}</Typography>
@@ -325,7 +340,7 @@ function InvoicePreview({
               </Typography>
               <QRCodeCanvas value={paymentQrPayload} size={116} level="M" bgColor="#ffffff" fgColor="#1f2937" />
               <Typography variant="caption" display="block" color="#64748b" sx={{ mt: 0.5 }}>
-                {labels.paymentQrHint}
+                {paymentQrHint}
               </Typography>
             </Box>
           )}

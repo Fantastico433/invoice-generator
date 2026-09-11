@@ -106,16 +106,38 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                     fullWidth
                   />
                 </Grid>
-                {!isQuote && (
-                  <Grid size={12}>
+                <Grid size={12}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: 2 }}>
+                    {!isQuote && (
+                      <FormControlLabel
+                        control={(
+                          <Checkbox
+                            checked={Boolean(data.showPaymentQr)}
+                            onChange={(event) => onDataChange({ ...data, showPaymentQr: event.target.checked })}
+                          />
+                        )}
+                        label={labels.paymentQr}
+                      />
+                    )}
                     <FormControlLabel
                       control={(
                         <Checkbox
-                          checked={Boolean(data.showPaymentQr)}
-                          onChange={(event) => onDataChange({ ...data, showPaymentQr: event.target.checked })}
+                          checked={Boolean(data.reverseCharge)}
+                          onChange={(event) => onDataChange({ ...data, reverseCharge: event.target.checked })}
                         />
                       )}
-                      label={labels.paymentQr}
+                      label={labels.reverseCharge}
+                    />
+                  </Box>
+                </Grid>
+                {!isQuote && data.showPaymentQr && (
+                  <Grid size={12}>
+                    <TextField
+                      label={labels.paymentLink}
+                      value={data.paymentLink || ''}
+                      onChange={handleFieldChange('paymentLink')}
+                      placeholder="https://"
+                      fullWidth
                     />
                   </Grid>
                 )}
