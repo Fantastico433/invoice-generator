@@ -82,8 +82,8 @@ test('builds an A4 quote from real text nodes and omits empty optional fields', 
     isQuote: true,
   });
   const serialized = JSON.stringify(definition);
-  const seller = definition.content[1].columns[0].columns;
-  const header = definition.content[1].columns[1];
+  const seller = definition.content[0].columns[0].columns;
+  const header = definition.content[0].columns[1];
   const definitionWithLogo = buildPdfDefinition({
     data,
     labels,
@@ -92,21 +92,25 @@ test('builds an A4 quote from real text nodes and omits empty optional fields', 
     isQuote: true,
     logoDataUrl: 'data:image/png;base64,AA==',
   });
-  const quoteLogo = definitionWithLogo.content[1].columns[0].columns[0];
+  const quoteLogo = definitionWithLogo.content[0].columns[0].columns[0];
 
   expect(definition.pageSize).toBe('A4');
-  expect(quoteLogo).toMatchObject({ width: 40, margin: [0, 0, 9, 0] });
+  expect(quoteLogo).toMatchObject({ width: 44, image: 'data:image/png;base64,AA==' });
   expect(seller[0].stack[0]).toMatchObject({
-    fontSize: 13,
+    fontSize: 16,
+    bold: true,
     noWrap: true,
   });
-  expect(header).toMatchObject({ width: 220, alignment: 'right', unbreakable: true });
+  expect(header).toMatchObject({ width: 200, alignment: 'right', unbreakable: true });
   expect(header.stack[0]).toMatchObject({
     text: 'HINNAPAKKUMINE',
     alignment: 'right',
     noWrap: true,
   });
-  expect(header.stack.slice(1).every((row) => row.noWrap)).toBe(true);
+  // Number, date and deadline sit in a tinted box under the title, one per line.
+  const numberBox = header.stack[1].table.body[0][0].stack;
+  expect(numberBox[0]).toMatchObject({ text: '#PAK-2026-1', bold: true, noWrap: true });
+  expect(numberBox.every((row) => row.noWrap)).toBe(true);
   expect(serialized).toContain('HINNAPAKKUMINE');
   expect(serialized).toContain('Valitav teenuse tekst');
   expect(serialized).toContain('Testklient OÜ');
@@ -165,10 +169,13 @@ test('drops headings and columns that would have nothing under them', () => {
   expect(table.table.widths).not.toContain('*');
   expect(table.table.body[1]).toHaveLength(headers.length);
 
-  const parties = definition.content.find((node) => node.columns && node.columns[0].stack);
-  const headings = parties.columns.map((column) => column.stack[0] && column.stack[0].text);
-  expect(headings).toContain(labels.supplier);
-  expect(headings).not.toContain(labels.client);
+  // Party boxes are single-cell tables; an empty party collapses to a blank column.
+  const parties = definition.content[1];
+  const headings = parties.columns.map((column) =>
+    column.table ? column.table.body[0][0].stack[0].text : null
+  );
+  expect(headings).toContain(labels.supplier.toUpperCase());
+  expect(headings).not.toContain(labels.client.toUpperCase());
 });
 
 test('prints the reverse charge note only when it is switched on', () => {

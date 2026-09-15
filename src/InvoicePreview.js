@@ -2,8 +2,6 @@ import React from 'react';
 import {
   Avatar,
   Box,
-  Card,
-  Divider,
   Grid,
   Table,
   TableBody,
@@ -12,10 +10,8 @@ import {
   TableHead,
   TableRow,
   Typography,
-  alpha,
   useTheme,
 } from '@mui/material';
-import { Business, Person, ReceiptLong } from '@mui/icons-material';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const hasValue = (value) => value !== undefined && value !== null && String(value).trim() !== '';
@@ -95,7 +91,6 @@ function InvoicePreview({
     hasValue(party.name) || hasValue(party.address) || hasValue(party.regCode) || hasValue(party.vatNumber);
 
   const documentTitle = isQuote ? labels.quoteTitleDefault : labels.invoiceTitleDefault;
-  const numberLabel = isQuote ? labels.quoteNumber : labels.invoiceNumber;
   const deadlineValue = isQuote ? data.validUntil : data.dueDate;
   const deadlineLabel = isQuote ? labels.validUntil : labels.dueDate;
   const quoteFields = [
@@ -133,252 +128,227 @@ function InvoicePreview({
         lineHeight: 1.6,
       };
 
+  const references = [
+    [labels.poNumber, data.poNumber],
+    [labels.contractNumber, data.contractNumber],
+    [labels.quotationNumber, data.quotationNumber],
+  ].filter(([, value]) => hasValue(value));
+
+  const muted = '#64748b';
+  const line = '#e2e8f0';
+  const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' };
+
+  const partyBox = (heading, party, options) => {
+    if (!hasPartyDetails(party)) return null;
+    return (
+      <Box sx={{ flex: 1, bgcolor: options.fill, borderLeft: `4px solid ${options.edge}`, borderRadius: 1, px: 2.5, py: 2 }}>
+        <Typography sx={{ ...eyebrow, color: options.headingColor, mb: 0.75 }}>{heading}</Typography>
+        {hasValue(party.name) && <Typography variant="subtitle1" fontWeight={700} color="#1f2937" sx={{ lineHeight: 1.3, mb: 0.5 }}>{party.name}</Typography>}
+        {hasValue(party.address) && <Typography variant="body2" sx={{ color: muted }}>{party.address}</Typography>}
+        {hasValue(party.regCode) && <Typography variant="body2" sx={{ color: muted }}>{labels.regCode}: {party.regCode}</Typography>}
+        {hasValue(party.vatNumber) && <Typography variant="body2" sx={{ color: muted }}>{labels.vatNumber}: {party.vatNumber}</Typography>}
+      </Box>
+    );
+  };
+
   return (
     <div id={previewId} style={containerStyles} data-document-type={isQuote ? 'quote' : 'invoice'}>
       <Box
         sx={{
-          height: 6,
-          background: isQuote
-            ? 'linear-gradient(to right, #6d28d9, #c084fc)'
-            : 'linear-gradient(to right, #1565c0, #42a5f5)',
-          mb: 4,
-          borderRadius: 2,
-        }}
-      />
-
-      <Card
-        elevation={isExportMode ? 0 : 3}
-        sx={{
-          borderRadius: isExportMode ? 0 : 3,
-          boxShadow: isExportMode ? 'none' : undefined,
-          p: 4,
+          border: `1px solid ${line}`,
+          borderRadius: 3,
+          overflow: 'hidden',
           bgcolor: '#fff',
           color: '#1f2937',
         }}
       >
-        <Grid
-          data-testid="document-header"
-          container
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 5, flexWrap: 'nowrap', columnGap: 2 }}
-        >
-          <Grid sx={{ flex: '1 1 auto', minWidth: 0, pr: 2 }}>
-            <Box display="flex" alignItems="center" sx={{ minWidth: 0 }}>
-              <Avatar
-                data-testid="company-header-logo"
-                src={data.company.logoUrl || `${process.env.PUBLIC_URL}/logo.png`}
-                alt="Company Logo"
-                crossOrigin="anonymous"
-                sx={{
-                  mr: isQuote ? 1.25 : 2,
-                  width: isQuote ? 44 : 64,
-                  height: isQuote ? 44 : 64,
-                  flexShrink: 0,
-                }}
-              />
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  data-testid="company-header-name"
-                  variant="h5"
-                  fontWeight={700}
-                  color="#1f2937"
-                  sx={{
-                    fontSize: isQuote ? '1.1rem' : undefined,
-                    lineHeight: isQuote ? 1.2 : undefined,
-                    whiteSpace: isQuote ? 'nowrap' : undefined,
-                  }}
-                >
-                  {data.company.name}
-                </Typography>
-                {hasValue(data.company.address) && (
-                  <Typography variant="subtitle2" color="#64748b">{data.company.address}</Typography>
-                )}
-              </Box>
-            </Box>
-          </Grid>
+        <Box
+          sx={{
+            height: 6,
+            background: isQuote
+              ? 'linear-gradient(to right, #7c3aed, #ec4899)'
+              : 'linear-gradient(to right, #1976d2, #c026d3)',
+          }}
+        />
+
+        <Box sx={{ p: 5 }}>
           <Grid
-            data-testid="document-header-right"
-            sx={{
-              ml: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: isQuote ? 'flex-end' : 'flex-start',
-              flexShrink: 0,
-              textAlign: isQuote ? 'right' : 'left',
-            }}
+            data-testid="document-header"
+            container
+            justifyContent="space-between"
+            alignItems="flex-start"
+            sx={{ mb: 5, flexWrap: 'nowrap', columnGap: 2 }}
           >
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent={isQuote ? 'flex-end' : 'flex-start'}
-              gap={1}
+            <Grid sx={{ flex: '1 1 auto', minWidth: 0, pr: 2 }}>
+              <Box display="flex" alignItems="center" sx={{ minWidth: 0 }}>
+                <Avatar
+                  data-testid="company-header-logo"
+                  src={data.company.logoUrl || `${process.env.PUBLIC_URL}/logo.png`}
+                  alt="Company Logo"
+                  crossOrigin="anonymous"
+                  sx={{
+                    mr: isQuote ? 1.25 : 2,
+                    width: isQuote ? 44 : 56,
+                    height: isQuote ? 44 : 56,
+                    flexShrink: 0,
+                  }}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    data-testid="company-header-name"
+                    variant="h5"
+                    fontWeight={700}
+                    color="#1f2937"
+                    sx={{
+                      fontSize: isQuote ? '1.1rem' : '1.5rem',
+                      lineHeight: 1.2,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {data.company.name}
+                  </Typography>
+                  {hasValue(data.company.address) && (
+                    <Typography variant="body2" sx={{ color: muted, mt: 0.25 }}>{data.company.address}</Typography>
+                  )}
+                </Box>
+              </Box>
+            </Grid>
+            <Grid
+              data-testid="document-header-right"
+              sx={{ ml: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, textAlign: 'right' }}
             >
-              <ReceiptLong sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }} />
               <Typography
                 data-testid="document-title"
                 variant="h4"
                 fontWeight={700}
-                style={{ fontSize: isQuote ? '1.7rem' : undefined }}
-                sx={{
-                  color: isQuote ? '#7c3aed' : '#1976d2',
-                  whiteSpace: 'nowrap',
-                }}
+                style={{ fontSize: isQuote ? '1.7rem' : '2.2rem' }}
+                sx={{ color: accent, whiteSpace: 'nowrap', lineHeight: 1.1 }}
               >
                 {documentTitle}
               </Typography>
-            </Box>
-            <Box
-              data-testid="document-metadata"
-              mt={2}
+              {(hasValue(documentNumber) || hasValue(data.date) || hasValue(deadlineValue)) && (
+                <Box data-testid="document-metadata" sx={{ mt: 1, bgcolor: accentLight, borderRadius: 1, px: 2, py: 1.25, textAlign: 'right', minWidth: 180 }}>
+                  {hasValue(documentNumber) && (
+                    <Typography variant="subtitle1" fontWeight={700} color="#1f2937" sx={{ whiteSpace: 'nowrap', lineHeight: 1.3 }}>#{documentNumber}</Typography>
+                  )}
+                  {hasValue(data.date) && (
+                    <Typography variant="body2" sx={{ color: muted, whiteSpace: 'nowrap' }}>{labels.date}: {data.date}</Typography>
+                  )}
+                  {hasValue(deadlineValue) && (
+                    <Typography variant="body2" sx={{ color: muted, whiteSpace: 'nowrap' }}>{deadlineLabel}: {deadlineValue}</Typography>
+                  )}
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+
+          <Box sx={{ display: 'flex', gap: 2, mb: references.length ? 2 : 4 }}>
+            {partyBox(labels.supplier, data.company, { fill: '#f3f4f6', edge: '#cbd5e1', headingColor: muted })}
+            {partyBox(labels.client, data.client, { fill: accentLight, edge: accent, headingColor: accent })}
+          </Box>
+
+          {references.length > 0 && (
+            <Typography variant="body2" sx={{ color: muted, mb: 4 }}>
+              {references.map(([label, value]) => `${label}: ${value}`).join('    |    ')}
+            </Typography>
+          )}
+
+          <TableContainer sx={{ mb: 4, border: `1px solid ${line}`, borderRadius: 1.5, overflow: 'hidden' }}>
+            <Table
+              size="small"
               sx={{
-                width: '100%',
-                textAlign: isQuote ? 'right' : 'left',
+                '& th': { bgcolor: accent, color: '#fff', fontWeight: 700, fontSize: 12, borderBottom: 0 },
+                '& td': { color: '#1f2937', borderBottom: '1px solid #eef2f6' },
+                '& tbody tr:last-child td': { borderBottom: 0 },
               }}
             >
-              {hasValue(documentNumber) && (
-                <Typography variant="body2" fontWeight={700} sx={{ whiteSpace: 'nowrap', color: accent }}>{numberLabel}: {documentNumber}</Typography>
-              )}
-              {hasValue(data.date) && (
-                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{labels.date}:</strong> {data.date}</Typography>
-              )}
-              {hasValue(deadlineValue) && (
-                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{deadlineLabel}:</strong> {deadlineValue}</Typography>
-              )}
-            </Box>
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ mb: 5 }} />
-
-        <Grid container justifyContent="space-between" spacing={4} sx={{ mb: 5 }}>
-          <Grid size={{ xs: 12, md: 5 }}>
-            {hasPartyDetails(data.company) && (
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <Business fontSize="small" color="action" />
-                <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.supplier}</Typography>
-              </Box>
-            )}
-            {hasValue(data.company.name) && <Typography variant="body2" fontWeight={700} color="#1f2937">{data.company.name}</Typography>}
-            {hasValue(data.company.address) && <Typography variant="body2" color="#1f2937">{data.company.address}</Typography>}
-            {hasValue(data.company.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.company.regCode}</Typography>}
-            {hasValue(data.company.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.company.vatNumber}</Typography>}
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: 'right', pr: { xs: 1, md: 4 } }}>
-            {hasPartyDetails(data.client) && (
-              <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1} mb={1}>
-                <Person fontSize="small" color="action" />
-                <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.client}</Typography>
-              </Box>
-            )}
-            {hasValue(data.client.name) && <Typography variant="body2" fontWeight={700} color="#1f2937">{data.client.name}</Typography>}
-            {hasValue(data.client.address) && <Typography variant="body2" color="#1f2937">{data.client.address}</Typography>}
-            {hasValue(data.client.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.client.regCode}</Typography>}
-            {hasValue(data.client.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.client.vatNumber}</Typography>}
-          </Grid>
-        </Grid>
-
-        <TableContainer sx={{ mb: 5 }}>
-          <Table size="small" sx={{ '& th': { bgcolor: accentLight, color: accent, fontWeight: 700 }, '& td': { color: '#1f2937' } }}>
-            <TableHead>
-              <TableRow>
-                {showDescription && <TableCell>{labels.description}</TableCell>}
-                <TableCell align="right">{labels.quantity}</TableCell>
-                {showUnit && <TableCell align="right">{labels.unit}</TableCell>}
-                <TableCell align="right">{labels.unitPrice}</TableCell>
-                <TableCell align="right">{labels.tax}</TableCell>
-                <TableCell align="right">{labels.amount}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.items.map((item, index) => (
-                <TableRow key={index} sx={{ '&:nth-of-type(odd)': { bgcolor: '#f8fafc' } }}>
-                  {showDescription && <TableCell sx={{ py: 2, fontWeight: 700, color: accent }}>{item.description}</TableCell>}
-                  <TableCell align="right" sx={{ py: 2 }}>{item.quantity}</TableCell>
-                  {showUnit && <TableCell align="right" sx={{ py: 2 }}>{item.unit}</TableCell>}
-                  <TableCell align="right" sx={{ py: 2 }}>{formatMoney(Number(item.unitPrice) || 0)}</TableCell>
-                  <TableCell align="right" sx={{ py: 2 }}>{taxRate.toFixed(1)}%</TableCell>
-                  <TableCell align="right" sx={{ py: 2 }}>{formatMoney((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</TableCell>
+              <TableHead>
+                <TableRow>
+                  {showDescription && <TableCell>{labels.description}</TableCell>}
+                  <TableCell align="center">{labels.quantity}</TableCell>
+                  {showUnit && <TableCell align="center">{labels.unit}</TableCell>}
+                  <TableCell align="right">{labels.unitPrice}</TableCell>
+                  <TableCell align="center">{labels.tax}</TableCell>
+                  <TableCell align="right">{labels.amount}</TableCell>
                 </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.items.map((item, index) => (
+                  <TableRow key={index}>
+                    {showDescription && <TableCell sx={{ py: 2, fontWeight: 700 }}>{item.description}</TableCell>}
+                    <TableCell align="center" sx={{ py: 2 }}>{item.quantity}</TableCell>
+                    {showUnit && <TableCell align="center" sx={{ py: 2 }}>{item.unit}</TableCell>}
+                    <TableCell align="right" sx={{ py: 2 }}>{formatMoney(Number(item.unitPrice) || 0)}</TableCell>
+                    <TableCell align="center" sx={{ py: 2 }}>{taxRate.toFixed(1)}%</TableCell>
+                    <TableCell align="right" sx={{ py: 2, fontWeight: 700 }}>{formatMoney((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0))}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {isQuote && quoteFields.length > 0 && (
+            <Box sx={{ mb: 4, px: 2.5, py: 2, borderRadius: 1, bgcolor: accentLight, borderLeft: `4px solid ${accent}` }}>
+              <Typography sx={{ ...eyebrow, color: accent, mb: 1 }}>{labels.quoteDetails}</Typography>
+              {quoteFields.map(([label, value]) => (
+                <Typography variant="body2" color="#1f2937" key={label} sx={{ whiteSpace: 'pre-wrap' }}>
+                  <strong>{label}:</strong> {value}
+                </Typography>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {isQuote && quoteFields.length > 0 && (
-          <Box sx={{ mb: 4, p: 3, borderRadius: 2, bgcolor: 'rgba(124, 58, 237, 0.06)', border: '1px solid rgba(124, 58, 237, 0.16)' }}>
-            <Typography variant="subtitle2" fontWeight={700} color="#6d28d9" gutterBottom>
-              {labels.quoteDetails}
-            </Typography>
-            {quoteFields.map(([label, value]) => (
-              <Typography variant="body2" color="#1f2937" key={label} sx={{ whiteSpace: 'pre-wrap' }}>
-                <strong>{label}:</strong> {value}
-              </Typography>
-            ))}
-          </Box>
-        )}
-
-        {data.reverseCharge && (
-          <Box sx={{ mb: 4, p: 2, borderRadius: 2, border: '1px solid #cbd5e1', bgcolor: '#f8fafc' }}>
-            <Typography variant="body2" fontWeight={600} color="#1f2937">
-              {labels.reverseChargeNote}
-            </Typography>
-          </Box>
-        )}
-
-        {hasValue(data.notes) && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle2" color="#1f2937" gutterBottom>{labels.notes}</Typography>
-            <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'pre-wrap' }}>{data.notes}</Typography>
-          </Box>
-        )}
-
-        <Box sx={{ display: 'flex', justifyContent: paymentQrPayload ? 'space-between' : 'flex-end', alignItems: 'flex-start', gap: 3, mb: 5 }}>
-          {paymentQrPayload && (
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="body2" fontWeight={700} color="#1f2937" gutterBottom>
-                {labels.paymentQrTitle}
-              </Typography>
-              <QRCodeCanvas value={paymentQrPayload} size={116} level="M" bgColor="#ffffff" fgColor="#1f2937" />
-              <Typography variant="caption" display="block" color="#64748b" sx={{ mt: 0.5 }}>
-                {paymentQrHint}
-              </Typography>
             </Box>
           )}
-          <Box
-            sx={{
-              width: 360,
-              p: 3,
-              bgcolor: alpha(isQuote ? '#c084fc' : '#90caf9', 0.12),
-              borderRadius: 2,
-              boxShadow: isExportMode ? 'none' : 1,
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" color="#64748b">{labels.subtotal}</Typography>
-              <Typography variant="body2" color="#1f2937">{formatMoney(subtotal)}</Typography>
+
+          {hasValue(data.notes) && (
+            <Box sx={{ mb: 4 }}>
+              <Typography sx={{ ...eyebrow, color: muted, mb: 0.5 }}>{labels.notes}</Typography>
+              <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'pre-wrap' }}>{data.notes}</Typography>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" color="#64748b">{labels.vat}</Typography>
-              <Typography variant="body2" color="#1f2937">{formatMoney(vat)}</Typography>
-            </Box>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle1" fontWeight={700} color="#1f2937">{labels.total}</Typography>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}>{formatMoney(total)}</Typography>
+          )}
+
+          <Box sx={{ display: 'flex', justifyContent: paymentQrPayload ? 'space-between' : 'flex-end', alignItems: 'flex-start', gap: 3, mb: 3 }}>
+            {paymentQrPayload && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" fontWeight={700} color="#1f2937" gutterBottom>
+                  {labels.paymentQrTitle}
+                </Typography>
+                <QRCodeCanvas value={paymentQrPayload} size={116} level="M" bgColor="#ffffff" fgColor="#1f2937" />
+                <Typography variant="caption" display="block" sx={{ color: muted, mt: 0.5 }}>
+                  {paymentQrHint}
+                </Typography>
+              </Box>
+            )}
+            <Box sx={{ width: 340, border: `1px solid ${line}`, borderRadius: 1.5, overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 3, py: 1.25 }}>
+                <Typography variant="body2" sx={{ color: muted }}>{labels.subtotal}</Typography>
+                <Typography variant="body2" sx={{ color: muted }}>{formatMoney(subtotal)}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 3, py: 1.25 }}>
+                <Typography variant="body2" sx={{ color: muted }}>{labels.vat} ({taxRate}%)</Typography>
+                <Typography variant="body2" sx={{ color: muted }}>{formatMoney(vat)}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 3, py: 2, bgcolor: accent, color: '#fff' }}>
+                <Typography variant="subtitle1" fontWeight={700}>{labels.total}</Typography>
+                <Typography variant="h6" fontWeight={700}>{formatMoney(total)}</Typography>
+              </Box>
             </Box>
           </Box>
-        </Box>
 
-        <Divider sx={{ mb: 3 }} />
-        <Box sx={{ py: 2, textAlign: 'center' }}>
-          <Typography variant="caption" color="#64748b">
-            {data.company.name}
-            {!isQuote && hasValue(data.bankAccount) ? ` | ${labels.account}: ${data.bankAccount}` : ''}
-          </Typography>
+          {data.reverseCharge && (
+            <Typography variant="caption" display="block" sx={{ color: muted, mb: 3 }}>
+              {labels.reverseChargeNote}
+            </Typography>
+          )}
         </Box>
-      </Card>
+      </Box>
+
+      <Box sx={{ borderTop: `1px solid ${line}`, mt: 3, pt: 2, display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+        <Typography variant="caption" sx={{ color: muted }}>{data.company.name}</Typography>
+        {!isQuote && hasValue(data.bankAccount) && (
+          <Typography variant="caption" sx={{ color: muted }}>
+            {labels.account}: {data.bankAccount}{hasValue(data.bic) ? ` · BIC: ${data.bic}` : ''}
+          </Typography>
+        )}
+      </Box>
     </div>
   );
 }

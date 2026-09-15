@@ -130,6 +130,19 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                     />
                   </Box>
                 </Grid>
+                {!isQuote && (
+                  <>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <TextField label={labels.poNumber} value={data.poNumber || ''} onChange={handleFieldChange('poNumber')} fullWidth />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <TextField label={labels.contractNumber} value={data.contractNumber || ''} onChange={handleFieldChange('contractNumber')} fullWidth />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <TextField label={labels.quotationNumber} value={data.quotationNumber || ''} onChange={handleFieldChange('quotationNumber')} fullWidth />
+                    </Grid>
+                  </>
+                )}
                 {!isQuote && data.showPaymentQr && (
                   <Grid size={12}>
                     <TextField

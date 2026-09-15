@@ -35,9 +35,8 @@ test('switches between invoice and quote modes', () => {
     alignItems: 'flex-end',
   });
   expect(screen.getByTestId('document-metadata')).toHaveStyle('text-align: right');
-  const quoteNumberRow = within(screen.getByTestId('document-metadata'))
-    .getByText(/Pakkumise nr:/)
-    .closest('p');
+  // The number box shows the bare number, prefixed with '#', not its label.
+  const quoteNumberRow = within(screen.getByTestId('document-metadata')).getByText(/^#PAK-/);
   expect(quoteNumberRow).toHaveStyle('white-space: nowrap');
   expect(within(screen.getByTestId('document-metadata')).getByText(/Kuupäev:/)).toBeInTheDocument();
   expect(screen.getByLabelText('Pakkumise nr')).toBeInTheDocument();
