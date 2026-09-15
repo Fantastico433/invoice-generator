@@ -55,6 +55,8 @@ function InvoicePreview({
   previewId = 'pdf-preview',
 }) {
   const theme = useTheme();
+  const accent = isQuote ? '#7c3aed' : '#1976d2';
+  const accentLight = isQuote ? '#f5f0ff' : '#eef6fd';
   const taxRate = Number(data.taxRate) || 0;
   const rate = rates[currency] || 1;
   const subtotal = data.items.reduce(
@@ -235,7 +237,7 @@ function InvoicePreview({
               }}
             >
               {hasValue(documentNumber) && (
-                <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{numberLabel}:</strong> {documentNumber}</Typography>
+                <Typography variant="body2" fontWeight={700} sx={{ whiteSpace: 'nowrap', color: accent }}>{numberLabel}: {documentNumber}</Typography>
               )}
               {hasValue(data.date) && (
                 <Typography variant="body2" color="#1f2937" sx={{ whiteSpace: 'nowrap' }}><strong>{labels.date}:</strong> {data.date}</Typography>
@@ -257,7 +259,7 @@ function InvoicePreview({
                 <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.supplier}</Typography>
               </Box>
             )}
-            {hasValue(data.company.name) && <Typography variant="body2" color="#1f2937">{data.company.name}</Typography>}
+            {hasValue(data.company.name) && <Typography variant="body2" fontWeight={700} color="#1f2937">{data.company.name}</Typography>}
             {hasValue(data.company.address) && <Typography variant="body2" color="#1f2937">{data.company.address}</Typography>}
             {hasValue(data.company.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.company.regCode}</Typography>}
             {hasValue(data.company.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.company.vatNumber}</Typography>}
@@ -270,7 +272,7 @@ function InvoicePreview({
                 <Typography variant="subtitle1" fontWeight={600} color="#1f2937">{labels.client}</Typography>
               </Box>
             )}
-            {hasValue(data.client.name) && <Typography variant="body2" color="#1f2937">{data.client.name}</Typography>}
+            {hasValue(data.client.name) && <Typography variant="body2" fontWeight={700} color="#1f2937">{data.client.name}</Typography>}
             {hasValue(data.client.address) && <Typography variant="body2" color="#1f2937">{data.client.address}</Typography>}
             {hasValue(data.client.regCode) && <Typography variant="body2" color="#1f2937">{labels.regCode}: {data.client.regCode}</Typography>}
             {hasValue(data.client.vatNumber) && <Typography variant="body2" color="#1f2937">{labels.vatNumber}: {data.client.vatNumber}</Typography>}
@@ -278,7 +280,7 @@ function InvoicePreview({
         </Grid>
 
         <TableContainer sx={{ mb: 5 }}>
-          <Table size="small" sx={{ '& th': { bgcolor: '#f1f5f9', color: '#1f2937' }, '& td': { color: '#1f2937' } }}>
+          <Table size="small" sx={{ '& th': { bgcolor: accentLight, color: accent, fontWeight: 700 }, '& td': { color: '#1f2937' } }}>
             <TableHead>
               <TableRow>
                 {showDescription && <TableCell>{labels.description}</TableCell>}
@@ -292,7 +294,7 @@ function InvoicePreview({
             <TableBody>
               {data.items.map((item, index) => (
                 <TableRow key={index} sx={{ '&:nth-of-type(odd)': { bgcolor: '#f8fafc' } }}>
-                  {showDescription && <TableCell sx={{ py: 2 }}>{item.description}</TableCell>}
+                  {showDescription && <TableCell sx={{ py: 2, fontWeight: 700, color: accent }}>{item.description}</TableCell>}
                   <TableCell align="right" sx={{ py: 2 }}>{item.quantity}</TableCell>
                   {showUnit && <TableCell align="right" sx={{ py: 2 }}>{item.unit}</TableCell>}
                   <TableCell align="right" sx={{ py: 2 }}>{formatMoney(Number(item.unitPrice) || 0)}</TableCell>

@@ -77,7 +77,7 @@ export const buildPdfDefinition = ({
 
   const metadata = [];
   if (hasValue(documentNumber)) {
-    metadata.push({ text: [{ text: `${numberLabel}: `, bold: true }, String(documentNumber)] });
+    metadata.push({ text: `${numberLabel}: ${documentNumber}`, bold: true, color: accent });
   }
   if (hasValue(data.date)) {
     metadata.push({ text: [{ text: `${labels.date}: `, bold: true }, String(data.date)] });
@@ -93,7 +93,7 @@ export const buildPdfDefinition = ({
     if (!hasDetails) return [];
 
     const rows = [{ text: heading, style: 'sectionHeading', margin: [0, 0, 0, 5] }];
-    if (hasValue(party.name)) rows.push({ text: party.name });
+    if (hasValue(party.name)) rows.push({ text: party.name, bold: true, fontSize: 10 });
     if (hasValue(party.address)) rows.push({ text: party.address });
     if (hasValue(party.regCode)) {
       rows.push({ text: `${labels.regCode}: ${party.regCode}` });
@@ -114,7 +114,7 @@ export const buildPdfDefinition = ({
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     return [
-      ...(showDescription ? [{ text: item.description || '', alignment: 'left' }] : []),
+      ...(showDescription ? [{ text: item.description || '', alignment: 'left', bold: true, color: accent }] : []),
       { text: String(quantity), alignment: 'right' },
       ...(showUnit ? [{ text: item.unit || '', alignment: 'right' }] : []),
       { text: money(unitPrice), alignment: 'right', noWrap: true },
@@ -155,14 +155,14 @@ export const buildPdfDefinition = ({
         ].map((text, index) => ({
           text,
           bold: true,
-          color: '#334155',
+          color: accent,
           alignment: showDescription && index === 0 ? 'left' : 'right',
         })),
         ...itemRows,
       ],
     },
     layout: {
-      fillColor: (rowIndex) => (rowIndex === 0 ? '#f1f5f9' : rowIndex % 2 ? '#ffffff' : '#f8fafc'),
+      fillColor: (rowIndex) => (rowIndex === 0 ? accentLight : rowIndex % 2 ? '#ffffff' : '#f8fafc'),
       hLineColor: () => '#d7dee8',
       vLineColor: () => '#e5eaf0',
       paddingTop: () => 7,
@@ -322,7 +322,7 @@ export const buildPdfDefinition = ({
             [labels.vat, { text: money(vat), alignment: 'right' }],
             [
               { text: labels.total, bold: true, fontSize: 11 },
-              { text: money(total), bold: true, fontSize: 11, color: accent, alignment: 'right' },
+              { text: money(total), bold: true, fontSize: 13, color: accent, alignment: 'right' },
             ],
           ],
         },
