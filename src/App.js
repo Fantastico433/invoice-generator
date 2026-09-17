@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Card,
   Container,
-  Divider,
   FormControl,
   Grid,
   IconButton,
@@ -163,9 +161,9 @@ const translations = {
     paymentQr: 'Lisa makse-QR',
     reverseCharge: 'Pöördmaksustamine',
     reverseChargeNote: 'KM 0% – pöördmaksustamine. Nõukogu direktiivi 2006/112/EÜ artiklid 44 ja 196.',
-    poNumber: 'Tellimus (PO)',
+    poNumber: 'PO nr',
     contractNumber: 'Leping',
-    quotationNumber: 'Pakkumine',
+    quotationNumber: 'Pakkumise nr',
     paymentQrTitle: 'Maksa QR-koodiga',
     paymentQrHint: 'Skaneeri pangarakendusega',
     paymentLink: 'Makselink (nt LHV makseküsimine)',
@@ -307,11 +305,40 @@ function App() {
             paper: darkMode ? (isQuote ? '#21182e' : '#1e1e1e') : '#ffffff',
           },
         },
+        shape: { borderRadius: 10 },
+        components: {
+          MuiTextField: { defaultProps: { size: 'small' } },
+          MuiFormControl: { defaultProps: { size: 'small' } },
+        },
       }),
     [darkMode, isQuote]
   );
 
   useEffect(() => watchUser(setUser), []);
+
+  // Glass surfaces sit on a soft gradient; transparency is dropped entirely
+  // for people who have asked their OS to reduce it.
+  const accentGlow = (alpha) => (isQuote ? `rgba(124, 58, 237, ${alpha})` : `rgba(25, 118, 210, ${alpha})`);
+  const secondaryGlow = (alpha) => (isQuote ? `rgba(236, 72, 153, ${alpha})` : `rgba(192, 38, 211, ${alpha})`);
+  const glass = {
+    borderRadius: 3,
+    border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.7)',
+    bgcolor: darkMode ? 'rgba(17, 24, 39, 0.55)' : 'rgba(255, 255, 255, 0.55)',
+    backdropFilter: 'blur(18px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+    boxShadow: darkMode
+      ? '0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+      : '0 12px 40px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+    '@media (prefers-reduced-transparency: reduce)': {
+      bgcolor: darkMode ? '#111827' : '#ffffff',
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
+    },
+  };
+  const pill = { borderRadius: 999, px: 1.75, textTransform: 'none', fontWeight: 600 };
+  const glassField = {
+    bgcolor: darkMode ? 'rgba(17, 24, 39, 0.4)' : 'rgba(255, 255, 255, 0.5)',
+  };
 
   const handleDataChange = (updated) => setInvoiceData(updated);
 
@@ -415,138 +442,130 @@ function App() {
         sx={{
           minHeight: '100vh',
           bgcolor: 'background.default',
-          backgroundImage: isQuote
-            ? 'radial-gradient(circle at top right, rgba(124, 58, 237, 0.18), transparent 42%)'
-            : 'radial-gradient(circle at top right, rgba(25, 118, 210, 0.12), transparent 42%)',
-          transition: 'background-color 300ms ease, background-image 300ms ease',
+          backgroundImage: darkMode
+            ? `radial-gradient(900px 600px at 8% -10%, ${accentGlow(0.28)}, transparent 60%),
+               radial-gradient(700px 500px at 100% 0%, ${secondaryGlow(0.22)}, transparent 60%),
+               linear-gradient(180deg, #0b1220 0%, #0f172a 100%)`
+            : `radial-gradient(900px 600px at 8% -10%, ${accentGlow(0.18)}, transparent 60%),
+               radial-gradient(700px 500px at 100% 0%, ${secondaryGlow(0.16)}, transparent 60%),
+               linear-gradient(180deg, #f6f8fc 0%, #eef2f8 100%)`,
+          backgroundAttachment: 'fixed',
+          transition: 'background-image 400ms ease',
         }}
       >
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Card
-            elevation={isQuote ? 7 : 3}
-            sx={{
-              p: { xs: 2, md: 4 },
-              borderRadius: 3,
-              border: isQuote ? '1px solid rgba(124, 58, 237, 0.32)' : '1px solid transparent',
-              transition: 'border-color 300ms ease, box-shadow 300ms ease',
-            }}
-          >
-            <Grid container spacing={1.5} justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Grid>
-                <Typography variant="h5">{labels.appTitle}</Typography>
-                <Typography
-                  data-testid="document-mode-status"
-                  variant="body2"
-                  fontWeight={600}
-                  sx={{ color: isQuote ? '#7c3aed' : '#1976d2' }}
-                >
-                  {isQuote ? labels.modeQuote : labels.modeInvoice}
-                </Typography>
-              </Grid>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+          {/* ---- top bar: identity, mode, primary actions ---- */}
+          <Box sx={{ ...glass, px: { xs: 2, md: 3 }, py: 1.5, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ mr: 'auto', minWidth: 0 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+                {labels.appTitle}
+              </Typography>
+              <Typography
+                data-testid="document-mode-status"
+                variant="caption"
+                fontWeight={600}
+                sx={{ color: isQuote ? '#a78bfa' : '#60a5fa', letterSpacing: '0.04em', textTransform: 'uppercase' }}
+              >
+                {isQuote ? labels.modeQuote : labels.modeInvoice}
+              </Typography>
+            </Box>
 
-              <Grid>
-                <Button
-                  data-testid="document-mode-toggle"
-                  variant={isQuote ? 'contained' : 'outlined'}
-                  startIcon={<RequestQuote />}
-                  onClick={toggleDocumentType}
-                  sx={{
-                    px: 2,
-                    fontWeight: 700,
-                    color: isQuote ? '#fff' : '#6d28d9',
-                    borderColor: '#7c3aed',
-                    bgcolor: isQuote ? '#7c3aed' : 'rgba(124, 58, 237, 0.06)',
-                    boxShadow: isQuote ? '0 6px 18px rgba(124, 58, 237, 0.3)' : 'none',
-                    '&:hover': { bgcolor: isQuote ? '#6d28d9' : 'rgba(124, 58, 237, 0.12)' },
-                  }}
-                >
-                  {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
+            <Button
+              data-testid="document-mode-toggle"
+              variant={isQuote ? 'contained' : 'outlined'}
+              startIcon={<RequestQuote />}
+              onClick={toggleDocumentType}
+              size="small"
+              sx={{
+                px: 2,
+                fontWeight: 700,
+                borderRadius: 999,
+                color: isQuote ? '#fff' : '#6d28d9',
+                borderColor: 'rgba(124, 58, 237, 0.5)',
+                bgcolor: isQuote ? '#7c3aed' : 'rgba(124, 58, 237, 0.08)',
+                boxShadow: isQuote ? '0 6px 18px rgba(124, 58, 237, 0.3)' : 'none',
+                '&:hover': { bgcolor: isQuote ? '#6d28d9' : 'rgba(124, 58, 237, 0.16)', borderColor: '#7c3aed' },
+              }}
+            >
+              {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={handleExportPDF}
+              size="small"
+              disabled={isExporting}
+              sx={{ borderRadius: 999, px: 2.5, fontWeight: 700, boxShadow: '0 6px 18px rgba(25, 118, 210, 0.28)' }}
+            >
+              {labels.download}
+            </Button>
+
+            {user ? (
+              <>
+                <Button startIcon={<CloudUpload />} onClick={handleSave} size="small" sx={pill}>
+                  {labels.save}
                 </Button>
-              </Grid>
-
-              <Grid>
-                <IconButton onClick={() => setDarkMode(!darkMode)} size="small" aria-label="Toggle theme">
-                  {darkMode ? <Brightness7 /> : <Brightness4 />}
-                </IconButton>
-              </Grid>
-
-              <Grid>
-                <FormControl size="small" sx={{ minWidth: 100 }}>
-                  <InputLabel>{labels.currency}</InputLabel>
-                  <Select value={currency} label={labels.currency} onChange={(event) => setCurrency(event.target.value)}>
-                    {Object.keys(currencyRates).map((currentCurrency) => (
-                      <MenuItem key={currentCurrency} value={currentCurrency}>
-                        {currentCurrency}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid>
-                <Button onClick={() => setLanguage(language === 'et' ? 'en' : 'et')} size="small">
-                  {labels.toggleLang}
+                <Button startIcon={<FolderOpen />} onClick={handleOpenDocuments} size="small" sx={pill}>
+                  {labels.myDocuments}
                 </Button>
-              </Grid>
-
-              <Grid>
-                <Button variant="outlined" onClick={switchCompany} size="small">
-                  {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
+                <Tooltip title={`${user.email} — ${labels.signOut}`}>
+                  <IconButton onClick={signOutUser} size="small" aria-label={labels.signOut}>
+                    <Logout fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Tooltip title={labels.signInHint}>
+                <Button startIcon={<Login />} onClick={signIn} size="small" sx={pill}>
+                  {labels.signIn}
                 </Button>
-              </Grid>
+              </Tooltip>
+            )}
+          </Box>
 
-              <Grid>
-                <Button variant="contained" onClick={handleExportPDF} size="small" disabled={isExporting}>
-                  {labels.download}
-                </Button>
-              </Grid>
+          {/* ---- settings strip: quiet controls that rarely change ---- */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2, px: 0.5 }}>
+            <Button variant="outlined" onClick={switchCompany} size="small" sx={pill}>
+              {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
+            </Button>
+            <FormControl size="small" sx={{ minWidth: 96 }}>
+              <InputLabel>{labels.currency}</InputLabel>
+              <Select
+                value={currency}
+                label={labels.currency}
+                onChange={(event) => setCurrency(event.target.value)}
+                sx={{ borderRadius: 999, ...glassField }}
+              >
+                {Object.keys(currencyRates).map((currentCurrency) => (
+                  <MenuItem key={currentCurrency} value={currentCurrency}>
+                    {currentCurrency}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button onClick={() => setLanguage(language === 'et' ? 'en' : 'et')} size="small" sx={pill}>
+              {labels.toggleLang}
+            </Button>
+            <IconButton onClick={() => setDarkMode(!darkMode)} size="small" aria-label="Toggle theme">
+              {darkMode ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+            <Box sx={{ flex: 1 }} />
+            <Button startIcon={<RestartAlt />} onClick={handleClearFields} size="small" color="inherit" sx={{ ...pill, opacity: 0.8 }}>
+              {labels.clearFields}
+            </Button>
+          </Box>
 
-              <Grid>
-                <Button startIcon={<RestartAlt />} onClick={handleClearFields} size="small">
-                  {labels.clearFields}
-                </Button>
-              </Grid>
-
-              {user ? (
-                <>
-                  <Grid>
-                    <Button startIcon={<CloudUpload />} onClick={handleSave} size="small">
-                      {labels.save}
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button startIcon={<FolderOpen />} onClick={handleOpenDocuments} size="small">
-                      {labels.myDocuments}
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Tooltip title={`${user.email} — ${labels.signOut}`}>
-                      <IconButton onClick={signOutUser} size="small" aria-label={labels.signOut}>
-                        <Logout fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Grid>
-                </>
-              ) : (
-                <Grid>
-                  <Tooltip title={labels.signInHint}>
-                    <Button startIcon={<Login />} onClick={signIn} size="small">
-                      {labels.signIn}
-                    </Button>
-                  </Tooltip>
-                </Grid>
-              )}
-            </Grid>
-
-            <Divider sx={{ mb: 1 }} />
-
-            <Grid container spacing={0}>
-              <Grid size={{ xs: 12, md: 6 }} sx={{ p: 0 }}>
+          {/* ---- work area: form on glass, document as paper ---- */}
+          <Grid container spacing={2} alignItems="flex-start">
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ ...glass, p: { xs: 1.5, md: 2 } }}>
                 <InvoiceForm data={invoiceData} onDataChange={handleDataChange} labels={labels} isQuote={isQuote} />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }} sx={{ p: 0, overflow: 'auto' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, pr: 1 }}>
-                  <Typography variant="h6" sx={{ whiteSpace: 'nowrap' }}>{labels.livePreview}</Typography>
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ ...glass, p: { xs: 1.5, md: 2 }, overflow: 'auto' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5, pr: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{labels.livePreview}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
                     {labels.previewScale}
                   </Typography>
@@ -573,9 +592,9 @@ function App() {
                   isQuote={isQuote}
                   scale={previewScale / 100}
                 />
-              </Grid>
+              </Box>
             </Grid>
-          </Card>
+          </Grid>
 
           <Dialog open={documentsOpen} onClose={() => setDocumentsOpen(false)} fullWidth maxWidth="sm">
             <DialogTitle>{labels.myDocuments}</DialogTitle>

@@ -81,8 +81,13 @@ number, and needs no payment provider or contract.
 
 - The preview is a fixed 794px (A4 at 96dpi) sheet scaled by CSS transform, so
   document geometry stays stable regardless of zoom.
-- `InvoiceForm` is wrapped in `transform: scale(0.8)` with `width: 125%` — an
-  intentional density hack, not dead styling.
+- The app chrome is glass on a soft gradient: a top bar, a quiet settings
+  strip, and two translucent panels (`backdrop-filter`). The document inside
+  the preview panel stays opaque white, since it is a print artefact and the
+  PDF cannot render blur. Transparency is dropped under
+  `prefers-reduced-transparency`.
+- Form density comes from the theme (`MuiTextField` defaults to `size="small"`),
+  not from a CSS transform; the earlier `scale(0.8)` wrapper is gone.
 - In the details block the first row is document number (8/12) plus the
   narrower VAT rate (4/12); date and deadline sit below at 6/12 each so the
   date pickers have room.

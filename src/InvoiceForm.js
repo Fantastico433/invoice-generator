@@ -60,11 +60,11 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
   const deadlineLabel = isQuote ? labels.validUntil : labels.dueDate;
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Box sx={{ transform: 'scale(0.8)', transformOrigin: 'top left', pt: 6, width: '125%' }}>
-        <Card elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+    <Box>
+      <Box>
+        <Card elevation={0} sx={{ p: { xs: 0.5, md: 1 }, borderRadius: 2, bgcolor: 'transparent' }}>
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, xl: 6 }}>
               <Typography variant="subtitle1" gutterBottom>
                 {documentTitle} {labels.details}
               </Typography>
@@ -132,13 +132,13 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
                 </Grid>
                 {!isQuote && (
                   <>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField label={labels.poNumber} value={data.poNumber || ''} onChange={handleFieldChange('poNumber')} fullWidth />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField label={labels.contractNumber} value={data.contractNumber || ''} onChange={handleFieldChange('contractNumber')} fullWidth />
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={12}>
                       <TextField label={labels.quotationNumber} value={data.quotationNumber || ''} onChange={handleFieldChange('quotationNumber')} fullWidth />
                     </Grid>
                   </>
@@ -165,7 +165,7 @@ export default function InvoiceForm({ data, onDataChange, labels, isQuote }) {
               </Grid>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, xl: 6 }}>
               <Typography variant="subtitle1" gutterBottom>{labels.client}</Typography>
               <Grid container spacing={1}>
                 <Grid size={12}>
