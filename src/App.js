@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   Container,
-  FormControl,
   Grid,
   IconButton,
-  InputLabel,
   MenuItem,
   Dialog,
   DialogContent,
@@ -335,9 +333,40 @@ function App() {
       WebkitBackdropFilter: 'none',
     },
   };
-  const pill = { borderRadius: 999, px: 1.75, textTransform: 'none', fontWeight: 600 };
-  const glassField = {
-    bgcolor: darkMode ? 'rgba(17, 24, 39, 0.4)' : 'rgba(255, 255, 255, 0.5)',
+  // One control family for the bar: same height, radius, edge and weight,
+  // whether the control is a button, a select or an icon.
+  const edge = darkMode ? 'rgba(255, 255, 255, 0.14)' : 'rgba(15, 23, 42, 0.14)';
+  const fieldBg = darkMode ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.6)';
+  const fieldHover = darkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.05)';
+  const pill = {
+    height: 34,
+    minHeight: 34,
+    borderRadius: 999,
+    px: 1.75,
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: 13,
+    lineHeight: 1,
+    color: 'text.primary',
+    border: `1px solid ${edge}`,
+    bgcolor: fieldBg,
+    boxShadow: 'none',
+    '&:hover': { bgcolor: fieldHover, borderColor: edge, boxShadow: 'none' },
+  };
+  const pillIcon = { ...pill, width: 34, px: 0, justifyContent: 'center' };
+  const pillPrimary = {
+    ...pill,
+    color: '#fff',
+    bgcolor: 'primary.main',
+    borderColor: 'transparent',
+    '&:hover': { bgcolor: 'primary.dark', borderColor: 'transparent', boxShadow: 'none' },
+  };
+  const pillQuote = {
+    ...pill,
+    color: isQuote ? '#fff' : '#6d28d9',
+    bgcolor: isQuote ? '#7c3aed' : 'rgba(124, 58, 237, 0.08)',
+    borderColor: isQuote ? 'transparent' : 'rgba(124, 58, 237, 0.35)',
+    '&:hover': { bgcolor: isQuote ? '#6d28d9' : 'rgba(124, 58, 237, 0.16)', borderColor: isQuote ? 'transparent' : '#7c3aed', boxShadow: 'none' },
   };
 
   const handleDataChange = (updated) => setInvoiceData(updated);
@@ -454,9 +483,9 @@ function App() {
         }}
       >
         <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
-          {/* ---- top bar: identity, mode, primary actions ---- */}
-          <Box sx={{ ...glass, px: { xs: 2, md: 3 }, py: 1.5, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ mr: 'auto', minWidth: 0 }}>
+          {/* ---- top bar: identity, settings, actions — one row, wraps when narrow ---- */}
+          <Box sx={{ ...glass, px: { xs: 2, md: 2.5 }, py: 1.25, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ mr: 'auto', minWidth: 0, pr: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
                 {labels.appTitle}
               </Typography>
@@ -470,71 +499,20 @@ function App() {
               </Typography>
             </Box>
 
-            <Button
-              data-testid="document-mode-toggle"
-              variant={isQuote ? 'contained' : 'outlined'}
-              startIcon={<RequestQuote />}
-              onClick={toggleDocumentType}
-              size="small"
-              sx={{
-                px: 2,
-                fontWeight: 700,
-                borderRadius: 999,
-                color: isQuote ? '#fff' : '#6d28d9',
-                borderColor: 'rgba(124, 58, 237, 0.5)',
-                bgcolor: isQuote ? '#7c3aed' : 'rgba(124, 58, 237, 0.08)',
-                boxShadow: isQuote ? '0 6px 18px rgba(124, 58, 237, 0.3)' : 'none',
-                '&:hover': { bgcolor: isQuote ? '#6d28d9' : 'rgba(124, 58, 237, 0.16)', borderColor: '#7c3aed' },
-              }}
-            >
-              {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
-            </Button>
-
-            <Button
-              variant="contained"
-              onClick={handleExportPDF}
-              size="small"
-              disabled={isExporting}
-              sx={{ borderRadius: 999, px: 2.5, fontWeight: 700, boxShadow: '0 6px 18px rgba(25, 118, 210, 0.28)' }}
-            >
-              {labels.download}
-            </Button>
-
-            {user ? (
-              <>
-                <Button startIcon={<CloudUpload />} onClick={handleSave} size="small" sx={pill}>
-                  {labels.save}
-                </Button>
-                <Button startIcon={<FolderOpen />} onClick={handleOpenDocuments} size="small" sx={pill}>
-                  {labels.myDocuments}
-                </Button>
-                <Tooltip title={`${user.email} — ${labels.signOut}`}>
-                  <IconButton onClick={signOutUser} size="small" aria-label={labels.signOut}>
-                    <Logout fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            ) : (
-              <Tooltip title={labels.signInHint}>
-                <Button startIcon={<Login />} onClick={signIn} size="small" sx={pill}>
-                  {labels.signIn}
-                </Button>
-              </Tooltip>
-            )}
-          </Box>
-
-          {/* ---- settings strip: quiet controls that rarely change ---- */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2, px: 0.5 }}>
-            <Button variant="outlined" onClick={switchCompany} size="small" sx={pill}>
+            <Button onClick={switchCompany} sx={pill}>
               {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
             </Button>
-            <FormControl size="small" sx={{ minWidth: 96 }}>
-              <InputLabel>{labels.currency}</InputLabel>
+            <Tooltip title={labels.currency}>
               <Select
                 value={currency}
-                label={labels.currency}
                 onChange={(event) => setCurrency(event.target.value)}
-                sx={{ borderRadius: 999, ...glassField }}
+                aria-label={labels.currency}
+                sx={{
+                  ...pill,
+                  px: 0,
+                  '& .MuiSelect-select': { py: 0, pl: 1.75, pr: '32px !important', display: 'flex', alignItems: 'center', height: '34px !important', minHeight: '0 !important' },
+                  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+                }}
               >
                 {Object.keys(currencyRates).map((currentCurrency) => (
                   <MenuItem key={currentCurrency} value={currentCurrency}>
@@ -542,17 +520,58 @@ function App() {
                   </MenuItem>
                 ))}
               </Select>
-            </FormControl>
-            <Button onClick={() => setLanguage(language === 'et' ? 'en' : 'et')} size="small" sx={pill}>
+            </Tooltip>
+            <Button onClick={() => setLanguage(language === 'et' ? 'en' : 'et')} sx={pill}>
               {labels.toggleLang}
             </Button>
-            <IconButton onClick={() => setDarkMode(!darkMode)} size="small" aria-label="Toggle theme">
-              {darkMode ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
-            <Box sx={{ flex: 1 }} />
-            <Button startIcon={<RestartAlt />} onClick={handleClearFields} size="small" color="inherit" sx={{ ...pill, opacity: 0.8 }}>
-              {labels.clearFields}
+            <Tooltip title={darkMode ? 'Hele' : 'Tume'}>
+              <IconButton onClick={() => setDarkMode(!darkMode)} aria-label="Toggle theme" sx={pillIcon}>
+                {darkMode ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+
+            <Box sx={{ width: '1px', alignSelf: 'stretch', my: 0.5, bgcolor: edge, mx: 0.5, display: { xs: 'none', md: 'block' } }} />
+
+            <Button
+              data-testid="document-mode-toggle"
+              startIcon={<RequestQuote fontSize="small" />}
+              onClick={toggleDocumentType}
+              sx={pillQuote}
+            >
+              {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
             </Button>
+
+            <Button onClick={handleExportPDF} disabled={isExporting} sx={pillPrimary}>
+              {labels.download}
+            </Button>
+
+            {user ? (
+              <>
+                <Button startIcon={<CloudUpload fontSize="small" />} onClick={handleSave} sx={pill}>
+                  {labels.save}
+                </Button>
+                <Button startIcon={<FolderOpen fontSize="small" />} onClick={handleOpenDocuments} sx={pill}>
+                  {labels.myDocuments}
+                </Button>
+                <Tooltip title={`${user.email} — ${labels.signOut}`}>
+                  <IconButton onClick={signOutUser} aria-label={labels.signOut} sx={pillIcon}>
+                    <Logout fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Tooltip title={labels.signInHint}>
+                <Button startIcon={<Login fontSize="small" />} onClick={signIn} sx={pill}>
+                  {labels.signIn}
+                </Button>
+              </Tooltip>
+            )}
+
+            <Tooltip title={labels.clearFields}>
+              <IconButton onClick={handleClearFields} aria-label={labels.clearFields} sx={pillIcon}>
+                <RestartAlt fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           {/* ---- work area: form on glass, document as paper ---- */}
