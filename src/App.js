@@ -18,7 +18,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, alpha, createTheme } from '@mui/material/styles';
 import {
   Brightness4,
   Brightness7,
@@ -307,6 +307,10 @@ function App() {
         components: {
           MuiTextField: { defaultProps: { size: 'small' } },
           MuiFormControl: { defaultProps: { size: 'small' } },
+          // Field text a point below the default so the form reads denser.
+          MuiInputBase: { styleOverrides: { input: { fontSize: 15 } } },
+          MuiInputLabel: { styleOverrides: { root: { fontSize: 15 } } },
+          MuiFormControlLabel: { styleOverrides: { label: { fontSize: 15 } } },
         },
       }),
     [darkMode, isQuote]
@@ -335,9 +339,11 @@ function App() {
   };
   // One control family for the bar: same height, radius, edge and weight,
   // whether the control is a button, a select or an icon.
-  const edge = darkMode ? 'rgba(255, 255, 255, 0.14)' : 'rgba(15, 23, 42, 0.14)';
-  const fieldBg = darkMode ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.6)';
-  const fieldHover = darkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.05)';
+  // Every bar control is a tint of the document accent, so the row reads as
+  // one family and shifts blue -> purple with the document type.
+  const accentHex = isQuote ? '#7c3aed' : '#1976d2';
+  const accentInk = darkMode ? (isQuote ? '#c4b5fd' : '#93c5fd') : (isQuote ? '#5b21b6' : '#0d47a1');
+  const edge = alpha(accentHex, darkMode ? 0.35 : 0.28);
   const pill = {
     height: 34,
     minHeight: 34,
@@ -347,26 +353,30 @@ function App() {
     fontWeight: 600,
     fontSize: 13,
     lineHeight: 1,
-    color: 'text.primary',
+    color: accentInk,
     border: `1px solid ${edge}`,
-    bgcolor: fieldBg,
+    bgcolor: alpha(accentHex, darkMode ? 0.16 : 0.08),
     boxShadow: 'none',
-    '&:hover': { bgcolor: fieldHover, borderColor: edge, boxShadow: 'none' },
+    '&:hover': { bgcolor: alpha(accentHex, darkMode ? 0.26 : 0.16), borderColor: alpha(accentHex, 0.5), boxShadow: 'none' },
+    '& .MuiSvgIcon-root': { color: accentInk },
   };
   const pillIcon = { ...pill, width: 34, px: 0, justifyContent: 'center' };
   const pillPrimary = {
     ...pill,
     color: '#fff',
-    bgcolor: 'primary.main',
+    bgcolor: accentHex,
     borderColor: 'transparent',
-    '&:hover': { bgcolor: 'primary.dark', borderColor: 'transparent', boxShadow: 'none' },
+    '&:hover': { bgcolor: alpha(accentHex, 0.85), borderColor: 'transparent', boxShadow: 'none' },
+    '& .MuiSvgIcon-root': { color: '#fff' },
+    '&.Mui-disabled': { color: alpha('#fff', 0.7), bgcolor: alpha(accentHex, 0.45) },
   };
+  // The mode toggle is one step stronger than its neighbours: it changes the
+  // whole document, and the tint says so without a second colour.
   const pillQuote = {
     ...pill,
-    color: isQuote ? '#fff' : '#6d28d9',
-    bgcolor: isQuote ? '#7c3aed' : 'rgba(124, 58, 237, 0.08)',
-    borderColor: isQuote ? 'transparent' : 'rgba(124, 58, 237, 0.35)',
-    '&:hover': { bgcolor: isQuote ? '#6d28d9' : 'rgba(124, 58, 237, 0.16)', borderColor: isQuote ? 'transparent' : '#7c3aed', boxShadow: 'none' },
+    bgcolor: alpha(accentHex, darkMode ? 0.26 : 0.14),
+    borderColor: alpha(accentHex, 0.45),
+    '&:hover': { bgcolor: alpha(accentHex, darkMode ? 0.34 : 0.22), borderColor: alpha(accentHex, 0.6), boxShadow: 'none' },
   };
 
   const handleDataChange = (updated) => setInvoiceData(updated);
