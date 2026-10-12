@@ -1,0 +1,150 @@
+import React from 'react';
+import { Avatar, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+
+const hasValue = (value) => value !== undefined && value !== null && String(value).trim() !== '';
+
+const accent = '#1976d2';
+const accentLight = '#eef6fd';
+const muted = '#64748b';
+const line = '#e2e8f0';
+const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' };
+
+export const buildPriceRows = (result, input, labels) => {
+  const rows = result.missions.map((mission) => ({
+    service: `${labels.missionNames[mission.key]}, ${labels.upTo} ${mission.onsiteHours} h ${labels.onsite}`,
+    list: mission.listPrice,
+    pilot: mission.pilotPrice,
+  }));
+
+  rows.push({ service: labels.extraHourRow, list: result.extraHourPrice, pilot: result.extraHourPilotPrice, perHour: true });
+  rows.push({ service: labels.multiDayRow, list: result.multiDayPrice, pilot: result.multiDayPilotPrice, perDay: true });
+  return rows;
+};
+
+export const buildIncludedRows = (input, labels) => [
+  `${labels.includedCrew}: ${input.crewSize} ${labels.includedCrewUnit}`,
+  labels.includedPlanning,
+  labels.includedInsurance,
+  labels.includedSensor,
+  labels.includedData,
+  `${labels.includedTravel} ${input.freeRadiusKm} km`,
+  labels.includedWeather,
+];
+
+export const buildExtraRows = (input, labels) => [
+  [`${labels.extraTravel} ${input.freeRadiusKm} km`, `${Number(input.perKmOutsideRadius).toFixed(2)} €/km`],
+  [`${labels.extraAccommodation} ${input.accommodationFromKm} km`, labels.atCost],
+  [labels.extraNight, `+${Math.round(input.nightWeekendSurcharge * 100)}%`],
+  [labels.extraRush, `+${Math.round(input.rushSurcharge * 100)}%`],
+  [labels.extraSensor, `${labels.cost} +${Math.round(input.sensorRentalMarkup * 100)}%`],
+  [labels.extraAnalysis, `${Math.round(input.analysisPerHour)} €/h`],
+];
+
+export default function PriceList({ input, result, labels, company, scale = 1 }) {
+  const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('et-EE')} €`;
+  const priceRows = buildPriceRows(result, input, labels);
+  const included = buildIncludedRows(input, labels);
+  const extras = buildExtraRows(input, labels);
+
+  return (
+    <div
+      id="price-list-preview"
+      style={{
+        boxSizing: 'border-box',
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width: 794,
+        margin: '0 auto',
+        padding: 24,
+        backgroundColor: 'transparent',
+        color: '#1f2937',
+        fontSize: 11,
+        lineHeight: 1.6,
+      }}
+    >
+      <Box sx={{ border: `1px solid ${line}`, borderRadius: 3, overflow: 'hidden', bgcolor: '#fff' }}>
+        <Box sx={{ height: 6, background: `linear-gradient(to right, ${accent}, #c026d3)` }} />
+
+        <Box sx={{ p: 5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+              <Avatar
+                src={company.logoUrl || `${process.env.PUBLIC_URL}/logo.png`}
+                alt=""
+                crossOrigin="anonymous"
+                sx={{ mr: 2, width: 56, height: 56, flexShrink: 0 }}
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h5" fontWeight={700} color="#1f2937" sx={{ fontSize: '1.5rem', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  {company.name}
+                </Typography>
+                {hasValue(company.address) && (
+                  <Typography variant="body2" sx={{ color: muted, mt: 0.25 }}>{company.address}</Typography>
+                )}
+              </Box>
+            </Box>
+            <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+              <Typography variant="h4" fontWeight={700} sx={{ color: accent, fontSize: '2rem', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+                {labels.priceListTitle}
+              </Typography>
+              <Typography variant="body2" sx={{ color: muted, mt: 0.5 }}>{labels.priceListSubtitle}</Typography>
+            </Box>
+          </Box>
+
+          <TableContainer sx={{ mb: 4, border: `1px solid ${line}`, borderRadius: 1.5, overflow: 'hidden' }}>
+            <Table
+              size="small"
+              sx={{
+                '& th': { bgcolor: accent, color: '#fff', fontWeight: 700, fontSize: 12, borderBottom: 0 },
+                '& td': { color: '#1f2937', borderBottom: `1px solid #eef2f6` },
+                '& tbody tr:last-child td': { borderBottom: 0 },
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>{labels.service}</TableCell>
+                  <TableCell align="right">{labels.listPriceColumn}</TableCell>
+                  <TableCell align="right">{labels.pilotPriceColumn}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {priceRows.map((row) => (
+                  <TableRow key={row.service}>
+                    <TableCell sx={{ py: 1.5, fontWeight: 700 }}>{row.service}</TableCell>
+                    <TableCell align="right" sx={{ py: 1.5 }}>{money(row.list)}</TableCell>
+                    <TableCell align="right" sx={{ py: 1.5, fontWeight: 700, color: accent }}>{money(row.pilot)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <Typography variant="caption" sx={{ color: muted, display: 'block', mb: 4 }}>
+            {`${labels.pilotNotePrefix}${Math.round(input.pilotDiscount * 100)}${labels.pilotNoteSuffix}`}
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+            <Box sx={{ flex: 1, minWidth: 260, bgcolor: accentLight, borderLeft: `4px solid ${accent}`, borderRadius: 1, px: 2.5, py: 2 }}>
+              <Typography sx={{ ...eyebrow, color: accent, mb: 1 }}>{labels.included}</Typography>
+              {included.map((item) => (
+                <Typography key={item} variant="body2" sx={{ color: '#1f2937', mb: 0.5 }}>• {item}</Typography>
+              ))}
+            </Box>
+
+            <Box sx={{ flex: 1, minWidth: 260 }}>
+              <Typography sx={{ ...eyebrow, color: muted, mb: 1 }}>{labels.extraServices}</Typography>
+              {extras.map(([label, value]) => (
+                <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, py: 0.5, borderBottom: `1px solid ${line}` }}>
+                  <Typography variant="body2" sx={{ color: '#1f2937' }}>{label}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'nowrap' }}>{value}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          <Typography variant="caption" sx={{ color: muted }}>{labels.priceListFooter}</Typography>
+        </Box>
+      </Box>
+    </div>
+  );
+}

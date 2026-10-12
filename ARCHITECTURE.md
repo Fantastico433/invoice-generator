@@ -41,6 +41,33 @@ on render (subtotal → VAT from `taxRate` → total) and never stored.
 - **Preview scale** — `previewScale` (percent, default 60, slider 50–100) is
   applied as a CSS transform. Display only; it never affects the PDF.
 
+## Pricing model tab
+
+A second workspace, selected by the tab switch in the top bar, with the same
+split as the documents tab: inputs on the left, a client-ready page on the
+right.
+
+- `src/pricing.js` — the whole model as one pure function, `calculatePricing`.
+  Nothing is typed twice: every figure is derived from the inputs. Margin is a
+  share of the selling price, so `price = cost / (1 - margin)`.
+- `src/PricingForm.js` — the inputs, plus the internal readout (fixed costs,
+  per-hour costs, and a per-mission margin table). This half is never shown to
+  a client.
+- `src/PriceList.js` — the client page. It also exports the row builders, so
+  the PDF cannot drift from the preview.
+- `src/priceListPdf.js` — the same page as a pdfMake definition, styled like
+  the invoice.
+
+The model answers two questions at once: what a mission costs at the volume
+used for pricing (`targetHours`), and what it actually earns at the volume
+expected (`actualHours`). The second is usually worse, and the cash margin —
+the same sum without depreciation — says whether real money is left over.
+`pricing.test.js` pins the agreed figures so a changed formula cannot pass
+quietly.
+
+Inputs persist to `localStorage` under `pricingInputs`, separately from the
+document.
+
 ## Persistence and authentication
 
 Two independent layers:

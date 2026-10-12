@@ -33,6 +33,9 @@ import {
 } from '@mui/icons-material';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
+import PricingForm from './PricingForm';
+import PriceList from './PriceList';
+import { calculatePricing, createPricingInputs } from './pricing';
 import {
   deleteDocument,
   listDocuments,
@@ -120,6 +123,222 @@ const loadSavedData = () => {
   } catch {
     return defaults;
   }
+};
+
+const loadSavedPricing = () => {
+  const defaults = createPricingInputs();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('pricingInputs'));
+    if (!saved || typeof saved !== 'object') return defaults;
+
+    return {
+      ...defaults,
+      ...saved,
+      // Mission shape is fixed; only the three numbers inside it are editable.
+      missions: defaults.missions.map((mission) => {
+        const savedMission = (saved.missions || []).find((entry) => entry.key === mission.key);
+        return savedMission ? { ...mission, ...savedMission } : mission;
+      }),
+    };
+  } catch {
+    return defaults;
+  }
+};
+
+const pricingLabels = {
+  et: {
+    pricingTab: 'Hinnamudel',
+    documentTab: 'Dokumendid',
+    pricingInputs: 'Sisendid',
+    pricingSystem: 'Süsteem ja püsikulud',
+    pricingVolume: 'Lennutunnid aastas',
+    pricingCrew: 'Meeskond',
+    pricingVariable: 'Muutuvkulud',
+    pricingRules: 'Hinnastamise reeglid',
+    pricingSurcharges: 'Lisatasud',
+    pricingMissions: 'Missioonid',
+    pricingResult: 'Arvutus',
+    pricingMission: 'Missioon',
+    systemCost: 'Süsteemi maksumus',
+    depreciationYears: 'Amortisatsiooniperiood',
+    depreciationShare: 'Amortisatsiooni osakaal hinnas',
+    hullInsurance: 'Kaskokindlustus',
+    liabilityInsurance: 'Vastutuskindlustus',
+    permits: 'Load, koolitus, riigilõivud',
+    software: 'Tarkvara',
+    vehicle: 'Auto ja haagis',
+    storage: 'Ladu ja ruumid',
+    targetHours: 'Hinnastamise sihtmaht',
+    actualHours: 'Tegelik prognoositav maht',
+    crewSize: 'Inimesi missioonil',
+    grossSalary: 'Brutopalk',
+    employerCoefficient: 'Tööandja kulu koefitsient',
+    paidHours: 'Tasustatud tunde kuus',
+    productiveShare: 'Produktiivsete tundide osakaal',
+    maintenance: 'Hooldus',
+    hydrogen: 'Vesinik ja logistika',
+    localTrip: 'Kohalik väljasõit',
+    overhead: 'Üldkulud',
+    targetMargin: 'Sihtmarginaal',
+    pilotDiscount: 'Pilootsoodustus',
+    multiDayDiscount: 'Mitmepäevase töö soodustus',
+    missionRounding: 'Missioonihinna ümardamine',
+    extraHourRounding: 'Lisatunni ümardamine',
+    freeRadius: 'Tasuta väljasõiduraadius',
+    perKm: 'Väljasõit üle raadiuse',
+    accommodationFrom: 'Majutus ja päevaraha alates',
+    nightWeekend: 'Öö- või nädalavahetusetöö lisa',
+    rush: 'Kiirtöö lisa',
+    sensorRental: 'Eriandurite juurdehindlus',
+    analysis: 'Andmeanalüüs ja aruanne',
+    onsiteHours: 'Kohapeal',
+    flightHours: 'Lennutunnid',
+    workHours: 'Töötunnid / inimene',
+    depreciationInPrice: 'Amortisatsioon hinnas (€/aasta)',
+    insuranceTotal: 'Kindlustus kokku (€/aasta)',
+    fixedTotal: 'Püsikulud kokku hinnas (€/aasta)',
+    fixedWithoutDepreciation: 'Püsikulud ilma amortisatsioonita',
+    fixedPerHourTarget: 'Püsikulu lennutunnis, sihtmahul',
+    fixedPerHourActual: 'Püsikulu lennutunnis, tegelikul mahul',
+    cashFixedPerHourActual: 'Rahaline püsikulu lennutunnis',
+    crewCostPerHour: 'Inimese kulu produktiivses tunnis',
+    costWithOverhead: 'Omahind koos üldkuluga',
+    listPrice: 'Hinnakirja hind',
+    pilotPrice: 'Piloothind',
+    marginTarget: 'Marginaal sihtmahul',
+    pilotMarginActual: 'Piloothind, tegelik maht',
+    pilotCashMargin: 'Piloothind, rahavoog',
+    pricingMarginNote: 'Punane rida tähendab, et sellel mahul ei teeni droon amortisatsiooni tagasi. Rahavoo rida näitab, kas päris raha jääb üle.',
+    missionNames: { short: 'Lühike missioon', halfDay: 'Pool päeva', fullDay: 'Täispäev' },
+    priceListTitle: 'HINNAKIRI',
+    priceListSubtitle: 'Senthinel vesinikudroon · hinnad ilma käibemaksuta',
+    service: 'Teenus',
+    listPriceColumn: 'Hinnakirja hind',
+    pilotPriceColumn: 'Piloothind',
+    upTo: 'kuni',
+    onsite: 'kohapeal',
+    extraHourRow: 'Lisatund üle paketi (€/h)',
+    multiDayRow: 'Mitmepäevane töö alates 3. päevast (€/päev)',
+    pilotNotePrefix: 'Piloothind kehtib kuni 5 esimesele kliendile (',
+    pilotNoteSuffix: '% soodustus).',
+    included: 'Hinnas sisaldub',
+    includedCrew: 'Meeskond',
+    includedCrewUnit: 'inimest (piloot ja vaatleja)',
+    includedPlanning: 'Lennu planeerimine, riskihinnang ja kooskõlastused',
+    includedInsurance: 'Vastutus- ja kaskokindlustus',
+    includedSensor: 'Ülesandele sobiv sensor',
+    includedData: 'Toorandmed ja lihtne raport',
+    includedTravel: 'Väljasõit Tartus ja raadiuses kuni',
+    includedWeather: 'Tasuta ümberplaneerimine, kui ilm ei luba lennata',
+    extraServices: 'Lisateenused',
+    extraTravel: 'Väljasõit Tartust kaugemale kui',
+    extraAccommodation: 'Majutus ja päevaraha kaugemal kui',
+    extraNight: 'Öö- või nädalavahetusetöö',
+    extraRush: 'Kiirtöö (alla 24 h ette)',
+    extraSensor: 'Eriandurite (nt LiDAR) rent',
+    extraAnalysis: 'Andmeanalüüs ja põhjalikum aruanne',
+    atCost: 'tegeliku kulu järgi',
+    cost: 'kulu',
+    priceListFooter: 'Lennud toimuvad EL-i droonimääruse ja Transpordiameti nõuete kohaselt.',
+    downloadPriceList: 'Laadi hinnakiri alla',
+  },
+  en: {
+    pricingTab: 'Pricing model',
+    documentTab: 'Documents',
+    pricingInputs: 'Inputs',
+    pricingSystem: 'System and fixed costs',
+    pricingVolume: 'Flight hours per year',
+    pricingCrew: 'Crew',
+    pricingVariable: 'Variable costs',
+    pricingRules: 'Pricing rules',
+    pricingSurcharges: 'Surcharges',
+    pricingMissions: 'Missions',
+    pricingResult: 'Calculation',
+    pricingMission: 'Mission',
+    systemCost: 'System cost',
+    depreciationYears: 'Depreciation period',
+    depreciationShare: 'Depreciation share in price',
+    hullInsurance: 'Hull insurance',
+    liabilityInsurance: 'Liability insurance',
+    permits: 'Permits, training, state fees',
+    software: 'Software',
+    vehicle: 'Vehicle and trailer',
+    storage: 'Storage',
+    targetHours: 'Pricing target volume',
+    actualHours: 'Expected actual volume',
+    crewSize: 'People on a mission',
+    grossSalary: 'Gross salary',
+    employerCoefficient: 'Employer cost coefficient',
+    paidHours: 'Paid hours per month',
+    productiveShare: 'Productive share of hours',
+    maintenance: 'Maintenance',
+    hydrogen: 'Hydrogen and logistics',
+    localTrip: 'Local call-out',
+    overhead: 'Overhead',
+    targetMargin: 'Target margin',
+    pilotDiscount: 'Pilot discount',
+    multiDayDiscount: 'Multi-day discount',
+    missionRounding: 'Mission price rounding',
+    extraHourRounding: 'Extra hour rounding',
+    freeRadius: 'Free travel radius',
+    perKm: 'Travel beyond radius',
+    accommodationFrom: 'Accommodation from',
+    nightWeekend: 'Night or weekend surcharge',
+    rush: 'Rush surcharge',
+    sensorRental: 'Special sensor markup',
+    analysis: 'Data analysis and report',
+    onsiteHours: 'On site',
+    flightHours: 'Flight hours',
+    workHours: 'Work hours / person',
+    depreciationInPrice: 'Depreciation in price (€/year)',
+    insuranceTotal: 'Insurance total (€/year)',
+    fixedTotal: 'Fixed costs in price (€/year)',
+    fixedWithoutDepreciation: 'Fixed costs without depreciation',
+    fixedPerHourTarget: 'Fixed cost per flight hour, target',
+    fixedPerHourActual: 'Fixed cost per flight hour, actual',
+    cashFixedPerHourActual: 'Cash fixed cost per flight hour',
+    crewCostPerHour: 'Person cost per productive hour',
+    costWithOverhead: 'Cost with overhead',
+    listPrice: 'List price',
+    pilotPrice: 'Pilot price',
+    marginTarget: 'Margin at target volume',
+    pilotMarginActual: 'Pilot price, actual volume',
+    pilotCashMargin: 'Pilot price, cash flow',
+    pricingMarginNote: 'A red row means the drone does not earn back its depreciation at that volume. The cash row shows whether real money is left over.',
+    missionNames: { short: 'Short mission', halfDay: 'Half day', fullDay: 'Full day' },
+    priceListTitle: 'PRICE LIST',
+    priceListSubtitle: 'Senthinel hydrogen drone · prices exclude VAT',
+    service: 'Service',
+    listPriceColumn: 'List price',
+    pilotPriceColumn: 'Pilot price',
+    upTo: 'up to',
+    onsite: 'on site',
+    extraHourRow: 'Extra hour beyond the package (€/h)',
+    multiDayRow: 'Multi-day work from day 3 (€/day)',
+    pilotNotePrefix: 'The pilot price applies to the first 5 clients (',
+    pilotNoteSuffix: '% discount).',
+    included: 'Included in the price',
+    includedCrew: 'Crew',
+    includedCrewUnit: 'people (pilot and observer)',
+    includedPlanning: 'Flight planning, risk assessment and approvals',
+    includedInsurance: 'Liability and hull insurance',
+    includedSensor: 'A sensor suited to the task',
+    includedData: 'Raw data and a simple report',
+    includedTravel: 'Travel in Tartu and within a radius of',
+    includedWeather: 'Free rescheduling when the weather does not allow flying',
+    extraServices: 'Extra services',
+    extraTravel: 'Travel beyond',
+    extraAccommodation: 'Accommodation and per diem beyond',
+    extraNight: 'Night or weekend work',
+    extraRush: 'Rush order (under 24 h notice)',
+    extraSensor: 'Special sensor (e.g. LiDAR) rental',
+    extraAnalysis: 'Data analysis and a fuller report',
+    atCost: 'at cost',
+    cost: 'cost',
+    priceListFooter: 'Flights are operated under the EU drone regulation and the requirements of the Estonian Transport Administration.',
+    downloadPriceList: 'Download price list',
+  },
 };
 
 const translations = {
@@ -282,14 +501,22 @@ function App() {
   const [savedDocuments, setSavedDocuments] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
   const [undoState, setUndoState] = useState(null);
+  const [tab, setTab] = useState('documents');
+  const [pricingInputs, setPricingInputs] = useState(loadSavedPricing);
 
   const isQuote = invoiceData.documentType === 'quote';
-  const labels = translations[language];
+  const isPricing = tab === 'pricing';
+  const labels = { ...translations[language], ...pricingLabels[language] };
+  const pricing = useMemo(() => calculatePricing(pricingInputs), [pricingInputs]);
 
   useEffect(() => {
     localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
     setAutosaveMsg(true);
   }, [invoiceData]);
+
+  useEffect(() => {
+    localStorage.setItem('pricingInputs', JSON.stringify(pricingInputs));
+  }, [pricingInputs]);
 
   const theme = useMemo(
     () =>
@@ -395,6 +622,14 @@ function App() {
   };
 
   const handleClearFields = () => {
+    if (isPricing) {
+      // On the pricing tab the same control restores the agreed assumptions.
+      setUndoState({ pricing: pricingInputs });
+      setPricingInputs(createPricingInputs());
+      setStatusMsg(labels.cleared);
+      return;
+    }
+
     // Keep the company block and the document kind: those are settings, not content.
     const fresh = createInitialData();
     setUndoState({ data: invoiceData, documentId });
@@ -411,8 +646,12 @@ function App() {
 
   const handleUndoClear = () => {
     if (!undoState) return;
-    setInvoiceData(undoState.data);
-    setDocumentId(undoState.documentId);
+    if (undoState.pricing) {
+      setPricingInputs(undoState.pricing);
+    } else {
+      setInvoiceData(undoState.data);
+      setDocumentId(undoState.documentId);
+    }
     setUndoState(null);
     setStatusMsg('');
   };
@@ -457,6 +696,17 @@ function App() {
     setIsExporting(true);
 
     try {
+      if (isPricing) {
+        const { exportPriceListPdf } = await import('./priceListPdf');
+        await exportPriceListPdf({
+          input: pricingInputs,
+          result: pricing,
+          labels,
+          company: invoiceData.company,
+        });
+        return;
+      }
+
       // The on-screen preview already renders the payment QR; reusing that
       // canvas keeps the PDF in step with what the user is looking at.
       const qrCanvas = document.querySelector('#pdf-preview canvas');
@@ -505,32 +755,60 @@ function App() {
                 fontWeight={600}
                 sx={{ color: isQuote ? '#a78bfa' : '#60a5fa', letterSpacing: '0.04em', textTransform: 'uppercase' }}
               >
-                {isQuote ? labels.modeQuote : labels.modeInvoice}
+                {isPricing ? labels.pricingTab : isQuote ? labels.modeQuote : labels.modeInvoice}
               </Typography>
+            </Box>
+
+            {/* ---- which workspace: documents or the pricing model ---- */}
+            <Box sx={{ display: 'flex', p: 0.4, borderRadius: 999, border: `1px solid ${edge}`, bgcolor: alpha(accentHex, darkMode ? 0.12 : 0.06), gap: 0.4 }}>
+              {[
+                ['documents', labels.documentTab],
+                ['pricing', labels.pricingTab],
+              ].map(([key, text]) => (
+                <Button
+                  key={key}
+                  data-testid={`tab-${key}`}
+                  onClick={() => setTab(key)}
+                  sx={{
+                    ...pill,
+                    height: 28,
+                    minHeight: 28,
+                    px: 1.5,
+                    border: 0,
+                    bgcolor: tab === key ? accentHex : 'transparent',
+                    color: tab === key ? '#fff' : accentInk,
+                    '&:hover': { bgcolor: tab === key ? accentHex : alpha(accentHex, 0.12) },
+                  }}
+                >
+                  {text}
+                </Button>
+              ))}
             </Box>
 
             <Button onClick={switchCompany} sx={pill}>
               {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
             </Button>
-            <Tooltip title={labels.currency}>
-              <Select
-                value={currency}
-                onChange={(event) => setCurrency(event.target.value)}
-                aria-label={labels.currency}
-                sx={{
-                  ...pill,
-                  px: 0,
-                  '& .MuiSelect-select': { py: 0, pl: 1.75, pr: '32px !important', display: 'flex', alignItems: 'center', height: '34px !important', minHeight: '0 !important' },
-                  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
-                }}
-              >
-                {Object.keys(currencyRates).map((currentCurrency) => (
-                  <MenuItem key={currentCurrency} value={currentCurrency}>
-                    {currentCurrency}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Tooltip>
+            {!isPricing && (
+              <Tooltip title={labels.currency}>
+                <Select
+                  value={currency}
+                  onChange={(event) => setCurrency(event.target.value)}
+                  aria-label={labels.currency}
+                  sx={{
+                    ...pill,
+                    px: 0,
+                    '& .MuiSelect-select': { py: 0, pl: 1.75, pr: '32px !important', display: 'flex', alignItems: 'center', height: '34px !important', minHeight: '0 !important' },
+                    '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+                  }}
+                >
+                  {Object.keys(currencyRates).map((currentCurrency) => (
+                    <MenuItem key={currentCurrency} value={currentCurrency}>
+                      {currentCurrency}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Tooltip>
+            )}
             <Button onClick={() => setLanguage(language === 'et' ? 'en' : 'et')} sx={pill}>
               {labels.toggleLang}
             </Button>
@@ -542,20 +820,22 @@ function App() {
 
             <Box sx={{ width: '1px', alignSelf: 'stretch', my: 0.5, bgcolor: edge, mx: 0.5, display: { xs: 'none', md: 'block' } }} />
 
-            <Button
-              data-testid="document-mode-toggle"
-              startIcon={<RequestQuote fontSize="small" />}
-              onClick={toggleDocumentType}
-              sx={pillQuote}
-            >
-              {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
-            </Button>
+            {!isPricing && (
+              <Button
+                data-testid="document-mode-toggle"
+                startIcon={<RequestQuote fontSize="small" />}
+                onClick={toggleDocumentType}
+                sx={pillQuote}
+              >
+                {isQuote ? labels.quoteModeButton : labels.invoiceModeButton}
+              </Button>
+            )}
 
             <Button onClick={handleExportPDF} disabled={isExporting} sx={pillPrimary}>
-              {labels.download}
+              {isPricing ? labels.downloadPriceList : labels.download}
             </Button>
 
-            {user ? (
+            {!isPricing && (user ? (
               <>
                 <Button startIcon={<CloudUpload fontSize="small" />} onClick={handleSave} sx={pill}>
                   {labels.save}
@@ -575,7 +855,7 @@ function App() {
                   {labels.signIn}
                 </Button>
               </Tooltip>
-            )}
+            ))}
 
             <Tooltip title={labels.clearFields}>
               <IconButton onClick={handleClearFields} aria-label={labels.clearFields} sx={pillIcon}>
@@ -588,7 +868,16 @@ function App() {
           <Grid container spacing={2} alignItems="flex-start">
             <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ ...glass, p: { xs: 1.5, md: 2 } }}>
-                <InvoiceForm data={invoiceData} onDataChange={handleDataChange} labels={labels} isQuote={isQuote} />
+                {isPricing ? (
+                  <PricingForm
+                    data={pricingInputs}
+                    onDataChange={setPricingInputs}
+                    result={pricing}
+                    labels={labels}
+                  />
+                ) : (
+                  <InvoiceForm data={invoiceData} onDataChange={handleDataChange} labels={labels} isQuote={isQuote} />
+                )}
               </Box>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -613,14 +902,24 @@ function App() {
                     {previewScale}%
                   </Typography>
                 </Box>
-                <InvoicePreview
-                  data={invoiceData}
-                  labels={labels}
-                  currency={currency}
-                  rates={currencyRates}
-                  isQuote={isQuote}
-                  scale={previewScale / 100}
-                />
+                {isPricing ? (
+                  <PriceList
+                    input={pricingInputs}
+                    result={pricing}
+                    labels={labels}
+                    company={invoiceData.company}
+                    scale={previewScale / 100}
+                  />
+                ) : (
+                  <InvoicePreview
+                    data={invoiceData}
+                    labels={labels}
+                    currency={currency}
+                    rates={currencyRates}
+                    isQuote={isQuote}
+                    scale={previewScale / 100}
+                  />
+                )}
               </Box>
             </Grid>
           </Grid>
