@@ -148,7 +148,10 @@ const loadSavedPricing = () => {
 
 const pricingLabels = {
   et: {
-    pricingTab: 'Hinnamudel',
+    // Short form for the tab, full name for the status line: the bar has to
+    // stay one row.
+    pricingTab: 'Kalkulaator',
+    pricingTabFull: 'Lennutunni kalkulaator',
     documentTab: 'Dokumendid',
     pricingInputs: 'Sisendid',
     pricingSystem: 'Süsteem ja püsikulud',
@@ -247,7 +250,8 @@ const pricingLabels = {
     downloadPriceList: 'Laadi hinnakiri alla',
   },
   en: {
-    pricingTab: 'Pricing model',
+    pricingTab: 'Calculator',
+    pricingTabFull: 'Flight hour calculator',
     documentTab: 'Documents',
     pricingInputs: 'Inputs',
     pricingSystem: 'System and fixed costs',
@@ -761,7 +765,7 @@ function App() {
                 fontWeight={600}
                 sx={{ color: isQuote ? '#a78bfa' : '#60a5fa', letterSpacing: '0.04em', textTransform: 'uppercase' }}
               >
-                {isPricing ? labels.pricingTab : isQuote ? labels.modeQuote : labels.modeInvoice}
+                {isPricing ? labels.pricingTabFull : isQuote ? labels.modeQuote : labels.modeInvoice}
               </Typography>
             </Box>
 

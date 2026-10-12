@@ -41,7 +41,7 @@ on render (subtotal → VAT from `taxRate` → total) and never stored.
 - **Preview scale** — `previewScale` (percent, default 60, slider 50–100) is
   applied as a CSS transform. Display only; it never affects the PDF.
 
-## Pricing model tab
+## Flight hour calculator tab
 
 A second workspace, selected by the tab switch in the top bar, with the same
 split as the documents tab: inputs on the left, a client-ready page on the
