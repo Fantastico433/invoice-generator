@@ -22,6 +22,7 @@ import { ThemeProvider, alpha, createTheme } from '@mui/material/styles';
 import {
   Brightness4,
   Brightness7,
+  Calculate,
   Close as CloseIcon,
   CloudUpload,
   RestartAlt,
@@ -585,7 +586,7 @@ function App() {
     height: 34,
     minHeight: 34,
     borderRadius: 999,
-    px: 1.75,
+    px: 1.4,
     textTransform: 'none',
     fontWeight: 600,
     fontSize: 13,
@@ -754,7 +755,7 @@ function App() {
       >
         <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
           {/* ---- top bar: identity, settings, actions — one row, wraps when narrow ---- */}
-          <Box sx={{ ...glass, px: { xs: 2, md: 2.5 }, py: 1.25, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ ...glass, px: { xs: 2, md: 2.5 }, py: 1.25, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75 }}>
             <Box sx={{ mr: 'auto', minWidth: 0, pr: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
                 {labels.appTitle}
@@ -769,31 +770,24 @@ function App() {
               </Typography>
             </Box>
 
-            {/* ---- which workspace: documents or the pricing model ---- */}
-            <Box sx={{ display: 'flex', p: 0.4, borderRadius: 999, border: `1px solid ${edge}`, bgcolor: alpha(accentHex, darkMode ? 0.12 : 0.06), gap: 0.4 }}>
-              {[
-                ['documents', labels.documentTab],
-                ['pricing', labels.pricingTab],
-              ].map(([key, text]) => (
-                <Button
-                  key={key}
-                  data-testid={`tab-${key}`}
-                  onClick={() => setTab(key)}
-                  sx={{
-                    ...pill,
-                    height: 28,
-                    minHeight: 28,
-                    px: 1.5,
-                    border: 0,
-                    bgcolor: tab === key ? accentHex : 'transparent',
-                    color: tab === key ? '#fff' : accentInk,
-                    '&:hover': { bgcolor: tab === key ? accentHex : alpha(accentHex, 0.12) },
-                  }}
-                >
-                  {text}
-                </Button>
-              ))}
-            </Box>
+            {/* ---- the calculator: one button that opens it and closes it again ---- */}
+            <Button
+              data-testid="tab-pricing"
+              startIcon={<Calculate fontSize="small" />}
+              onClick={() => setTab(isPricing ? 'documents' : 'pricing')}
+              sx={
+                isPricing
+                  ? {
+                      ...pill,
+                      bgcolor: alpha(accentHex, darkMode ? 0.3 : 0.18),
+                      borderColor: alpha(accentHex, 0.55),
+                      '&:hover': { bgcolor: alpha(accentHex, darkMode ? 0.38 : 0.26), borderColor: accentHex },
+                    }
+                  : pill
+              }
+            >
+              {isPricing ? labels.documentTab : labels.pricingTab}
+            </Button>
 
             <Button onClick={switchCompany} sx={pill}>
               {companyId === 'skycorp' ? 'SKYCORP Tech' : 'SKYCORP'}
@@ -807,7 +801,7 @@ function App() {
                   sx={{
                     ...pill,
                     px: 0,
-                    '& .MuiSelect-select': { py: 0, pl: 1.75, pr: '32px !important', display: 'flex', alignItems: 'center', height: '34px !important', minHeight: '0 !important' },
+                    '& .MuiSelect-select': { py: 0, pl: 1.4, pr: '32px !important', display: 'flex', alignItems: 'center', height: '34px !important', minHeight: '0 !important' },
                     '& .MuiOutlinedInput-notchedOutline': { border: 0 },
                   }}
                 >
