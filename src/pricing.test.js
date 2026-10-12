@@ -1,4 +1,5 @@
 import { calculatePricing, createPricingInputs, sensitivityByVolume } from './pricing';
+import { buildExtraRows, buildIncludedRows, buildPriceRows } from './PriceList';
 
 const byKey = (result, key) => result.missions.find((mission) => mission.key === key);
 
@@ -69,6 +70,50 @@ test('reports the volume at which the pilot price stops losing money', () => {
   // Cash margin is always the kinder of the two, and margin improves with volume.
   rows.forEach((row) => expect(row.cashMargin).toBeGreaterThan(row.margin));
   expect(rows[rows.length - 1].margin).toBeGreaterThan(rows[0].margin);
+});
+
+test('leaves hidden rows out of the client price list', () => {
+  const labels = {
+    missionNames: { short: 'Lühike', halfDay: 'Pool päeva', fullDay: 'Täispäev' },
+    upTo: 'kuni',
+    onsite: 'kohapeal',
+    extraHourRow: 'Lisatund',
+    multiDayRow: 'Mitmepäevane',
+    includedCrew: 'Meeskond',
+    includedCrewUnit: 'inimest',
+    includedPlanning: 'Planeerimine',
+    includedInsurance: 'Kindlustus',
+    includedSensor: 'Sensor',
+    includedData: 'Andmed',
+    includedTravel: 'Väljasõit kuni',
+    includedWeather: 'Ümberplaneerimine',
+    extraTravel: 'Väljasõit üle',
+    extraAccommodation: 'Majutus üle',
+    extraNight: 'Öötöö',
+    extraRush: 'Kiirtöö',
+    extraSensor: 'LiDAR',
+    extraAnalysis: 'Analüüs',
+    atCost: 'kulu järgi',
+    cost: 'kulu',
+  };
+
+  const input = { ...createPricingInputs(), hidden: ['row:short', 'inc:weather', 'ext:night'] };
+  const result = calculatePricing(input);
+
+  const rows = buildPriceRows(result, input, labels);
+  expect(rows.map((row) => row.key)).not.toContain('row:short');
+  expect(rows.map((row) => row.key)).toContain('row:fullDay');
+
+  expect(buildIncludedRows(input, labels).map((row) => row.key)).not.toContain('inc:weather');
+  expect(buildExtraRows(input, labels).map((row) => row.key)).not.toContain('ext:night');
+
+  // The form needs the full set to draw its checkboxes, hidden ones included.
+  expect(buildPriceRows(result, input, labels, true)).toHaveLength(5);
+  expect(buildIncludedRows(input, labels, true)).toHaveLength(7);
+  expect(buildExtraRows(input, labels, true)).toHaveLength(6);
+
+  // Hiding a row changes nothing about the model behind it.
+  expect(result.missions[0].listPrice).toBe(1200);
 });
 
 test('survives inputs that would otherwise divide by zero', () => {

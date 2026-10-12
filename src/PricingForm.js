@@ -1,12 +1,15 @@
 import React from 'react';
 import {
   Box,
+  Checkbox,
   Divider,
+  FormControlLabel,
   Grid,
   InputAdornment,
   TextField,
   Typography,
 } from '@mui/material';
+import { buildExtraRows, buildIncludedRows, buildPriceRows } from './PriceList';
 
 // Percentages are stored as fractions (0.15) but edited as whole numbers (15),
 // which is how everyone talks about them.
@@ -132,6 +135,47 @@ export default function PricingForm({ data, onDataChange, result, labels }) {
               <Field label={labels.flightHours} value={mission.flightHours} onChange={setMission(index, 'flightHours')} unit="h" size={4} />
               <Field label={labels.workHours} value={mission.workHoursPerPerson} onChange={setMission(index, 'workHoursPerPerson')} unit="h" size={4} />
             </Grid>
+          </Grid>
+        ))}
+      </Section>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* ---- which rows the client actually sees ---- */}
+      <Section title={labels.pricingVisibleRows}>
+        <Grid size={12}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            {labels.pricingVisibleRowsNote}
+          </Typography>
+        </Grid>
+        {[
+          [labels.pricingRowsPrices, buildPriceRows(result, data, labels, true).map((row) => [row.key, row.service])],
+          [labels.included, buildIncludedRows(data, labels, true).map((row) => [row.key, row.text])],
+          [labels.extraServices, buildExtraRows(data, labels, true).map((row) => [row.key, row.label])],
+        ].map(([groupTitle, rows]) => (
+          <Grid size={12} key={groupTitle}>
+            <Typography variant="body2" fontWeight={700} sx={{ mb: 0.25 }}>{groupTitle}</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              {rows.map(([key, text]) => (
+                <FormControlLabel
+                  key={key}
+                  sx={{ mr: 0, '& .MuiFormControlLabel-label': { fontSize: 13, lineHeight: 1.35 } }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={!(data.hidden || []).includes(key)}
+                      onChange={(event) => {
+                        const hidden = new Set(data.hidden || []);
+                        if (event.target.checked) hidden.delete(key);
+                        else hidden.add(key);
+                        onDataChange({ ...data, hidden: [...hidden] });
+                      }}
+                    />
+                  }
+                  label={text}
+                />
+              ))}
+            </Box>
           </Grid>
         ))}
       </Section>

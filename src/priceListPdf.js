@@ -56,6 +56,8 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
     ],
   });
 
+  const includedRows = buildIncludedRows(input, labels);
+  const extraRows = buildExtraRows(input, labels);
   const priceRows = buildPriceRows(result, input, labels).map((row) => [
     { text: row.service, bold: true, color: ink },
     { text: money(row.list), alignment: 'right' },
@@ -107,7 +109,7 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
         columnGap: 20,
         margin: [0, 6, 0, 28],
       },
-      {
+      ...(priceRows.length ? [{
         table: { headerRows: 1, widths: ['*', 90, 90], body: [header, ...priceRows] },
         layout: {
           fillColor: (rowIndex) => (rowIndex === 0 ? accent : null),
@@ -121,23 +123,25 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
           paddingRight: () => 8,
         },
         margin: [0, 0, 0, 10],
-      },
-      {
+      }] : []),
+      ...(priceRows.length ? [{
         text: `${labels.pilotNotePrefix}${Math.round(input.pilotDiscount * 100)}${labels.pilotNoteSuffix}`,
         color: muted,
         fontSize: 8,
         margin: [0, 0, 0, 22],
-      },
-      {
+      }] : []),
+      // A block with nothing under it would print as a lone heading, so it goes
+      // with its rows.
+      ...(includedRows.length || extraRows.length ? [{
         columns: [
-          {
+          includedRows.length ? {
             width: '*',
             table: {
               widths: ['*'],
               body: [[{
                 stack: [
                   { text: String(labels.included).toUpperCase(), bold: true, fontSize: 7.5, color: accent, characterSpacing: 0.6, margin: [0, 0, 0, 6] },
-                  ...buildIncludedRows(input, labels).map((item) => ({ text: `• ${item}`, margin: [0, 1.5, 0, 0] })),
+                  ...includedRows.map((item) => ({ text: `• ${item.text}`, margin: [0, 1.5, 0, 0] })),
                 ],
               }]],
             },
@@ -151,17 +155,17 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
               paddingLeft: () => 14,
               paddingRight: () => 12,
             },
-          },
-          {
+          } : { width: '*', text: '' },
+          extraRows.length ? {
             width: '*',
             stack: [
               { text: String(labels.extraServices).toUpperCase(), bold: true, fontSize: 7.5, color: muted, characterSpacing: 0.6, margin: [0, 0, 0, 6] },
               {
                 table: {
                   widths: ['*', 'auto'],
-                  body: buildExtraRows(input, labels).map(([label, value]) => [
-                    { text: label },
-                    { text: value, alignment: 'right', bold: true, noWrap: true },
+                  body: extraRows.map((extra) => [
+                    { text: extra.label },
+                    { text: extra.value, alignment: 'right', bold: true, noWrap: true },
                   ]),
                 },
                 layout: {
@@ -175,11 +179,11 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
                 },
               },
             ],
-          },
+          } : { width: '*', text: '' },
         ],
         columnGap: 18,
         margin: [0, 0, 0, 22],
-      },
+      }] : []),
       { text: labels.priceListFooter, color: muted, fontSize: 8 },
     ],
     footer: () => ({

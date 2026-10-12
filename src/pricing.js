@@ -53,6 +53,9 @@ export const createPricingInputs = () => ({
   sensorRentalMarkup: 0.15,
   analysisPerHour: 60,
 
+  // Rows left out of the client price list, by key (see PriceList.js).
+  hidden: [],
+
   // 7. Missions
   missions: [
     { key: 'short', onsiteHours: 2, flightHours: 1.5, workHoursPerPerson: 5 },

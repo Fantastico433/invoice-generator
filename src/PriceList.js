@@ -9,36 +9,54 @@ const muted = '#64748b';
 const line = '#e2e8f0';
 const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' };
 
-export const buildPriceRows = (result, input, labels) => {
+// Every row the price list can carry, each with a stable key. A row listed in
+// `input.hidden` is left out, which is how a quote gets tailored to one client
+// without rewriting the model. Passing `all` returns the full set, which is
+// what the form needs to draw its checkboxes.
+const visible = (rows, input, all) =>
+  all ? rows : rows.filter((row) => !(input.hidden || []).includes(row.key));
+
+export const buildPriceRows = (result, input, labels, all = false) => {
   const rows = result.missions.map((mission) => ({
+    key: `row:${mission.key}`,
     service: `${labels.missionNames[mission.key]}, ${labels.upTo} ${mission.onsiteHours} h ${labels.onsite}`,
     list: mission.listPrice,
     pilot: mission.pilotPrice,
   }));
 
-  rows.push({ service: labels.extraHourRow, list: result.extraHourPrice, pilot: result.extraHourPilotPrice, perHour: true });
-  rows.push({ service: labels.multiDayRow, list: result.multiDayPrice, pilot: result.multiDayPilotPrice, perDay: true });
-  return rows;
+  rows.push({ key: 'row:extraHour', service: labels.extraHourRow, list: result.extraHourPrice, pilot: result.extraHourPilotPrice });
+  rows.push({ key: 'row:multiDay', service: labels.multiDayRow, list: result.multiDayPrice, pilot: result.multiDayPilotPrice });
+  return visible(rows, input, all);
 };
 
-export const buildIncludedRows = (input, labels) => [
-  `${labels.includedCrew}: ${input.crewSize} ${labels.includedCrewUnit}`,
-  labels.includedPlanning,
-  labels.includedInsurance,
-  labels.includedSensor,
-  labels.includedData,
-  `${labels.includedTravel} ${input.freeRadiusKm} km`,
-  labels.includedWeather,
-];
+export const buildIncludedRows = (input, labels, all = false) =>
+  visible(
+    [
+      { key: 'inc:crew', text: `${labels.includedCrew}: ${input.crewSize} ${labels.includedCrewUnit}` },
+      { key: 'inc:planning', text: labels.includedPlanning },
+      { key: 'inc:insurance', text: labels.includedInsurance },
+      { key: 'inc:sensor', text: labels.includedSensor },
+      { key: 'inc:data', text: labels.includedData },
+      { key: 'inc:travel', text: `${labels.includedTravel} ${input.freeRadiusKm} km` },
+      { key: 'inc:weather', text: labels.includedWeather },
+    ],
+    input,
+    all
+  );
 
-export const buildExtraRows = (input, labels) => [
-  [`${labels.extraTravel} ${input.freeRadiusKm} km`, `${Number(input.perKmOutsideRadius).toFixed(2)} €/km`],
-  [`${labels.extraAccommodation} ${input.accommodationFromKm} km`, labels.atCost],
-  [labels.extraNight, `+${Math.round(input.nightWeekendSurcharge * 100)}%`],
-  [labels.extraRush, `+${Math.round(input.rushSurcharge * 100)}%`],
-  [labels.extraSensor, `${labels.cost} +${Math.round(input.sensorRentalMarkup * 100)}%`],
-  [labels.extraAnalysis, `${Math.round(input.analysisPerHour)} €/h`],
-];
+export const buildExtraRows = (input, labels, all = false) =>
+  visible(
+    [
+      { key: 'ext:travel', label: `${labels.extraTravel} ${input.freeRadiusKm} km`, value: `${Number(input.perKmOutsideRadius).toFixed(2)} €/km` },
+      { key: 'ext:accommodation', label: `${labels.extraAccommodation} ${input.accommodationFromKm} km`, value: labels.atCost },
+      { key: 'ext:night', label: labels.extraNight, value: `+${Math.round(input.nightWeekendSurcharge * 100)}%` },
+      { key: 'ext:rush', label: labels.extraRush, value: `+${Math.round(input.rushSurcharge * 100)}%` },
+      { key: 'ext:sensor', label: labels.extraSensor, value: `${labels.cost} +${Math.round(input.sensorRentalMarkup * 100)}%` },
+      { key: 'ext:analysis', label: labels.extraAnalysis, value: `${Math.round(input.analysisPerHour)} €/h` },
+    ],
+    input,
+    all
+  );
 
 export default function PriceList({ input, result, labels, company, scale = 1 }) {
   const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('et-EE')} €`;
@@ -109,7 +127,7 @@ export default function PriceList({ input, result, labels, company, scale = 1 })
               </TableHead>
               <TableBody>
                 {priceRows.map((row) => (
-                  <TableRow key={row.service}>
+                  <TableRow key={row.key}>
                     <TableCell sx={{ py: 1.5, fontWeight: 700 }}>{row.service}</TableCell>
                     <TableCell align="right" sx={{ py: 1.5 }}>{money(row.list)}</TableCell>
                     <TableCell align="right" sx={{ py: 1.5, fontWeight: 700, color: accent }}>{money(row.pilot)}</TableCell>
@@ -123,24 +141,30 @@ export default function PriceList({ input, result, labels, company, scale = 1 })
             {`${labels.pilotNotePrefix}${Math.round(input.pilotDiscount * 100)}${labels.pilotNoteSuffix}`}
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
-            <Box sx={{ flex: 1, minWidth: 260, bgcolor: accentLight, borderLeft: `4px solid ${accent}`, borderRadius: 1, px: 2.5, py: 2 }}>
-              <Typography sx={{ ...eyebrow, color: accent, mb: 1 }}>{labels.included}</Typography>
-              {included.map((item) => (
-                <Typography key={item} variant="body2" sx={{ color: '#1f2937', mb: 0.5 }}>• {item}</Typography>
-              ))}
-            </Box>
-
-            <Box sx={{ flex: 1, minWidth: 260 }}>
-              <Typography sx={{ ...eyebrow, color: muted, mb: 1 }}>{labels.extraServices}</Typography>
-              {extras.map(([label, value]) => (
-                <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, py: 0.5, borderBottom: `1px solid ${line}` }}>
-                  <Typography variant="body2" sx={{ color: '#1f2937' }}>{label}</Typography>
-                  <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'nowrap' }}>{value}</Typography>
+          {(included.length > 0 || extras.length > 0) && (
+            <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+              {included.length > 0 && (
+                <Box sx={{ flex: 1, minWidth: 260, bgcolor: accentLight, borderLeft: `4px solid ${accent}`, borderRadius: 1, px: 2.5, py: 2 }}>
+                  <Typography sx={{ ...eyebrow, color: accent, mb: 1 }}>{labels.included}</Typography>
+                  {included.map((item) => (
+                    <Typography key={item.key} variant="body2" sx={{ color: '#1f2937', mb: 0.5 }}>• {item.text}</Typography>
+                  ))}
                 </Box>
-              ))}
+              )}
+
+              {extras.length > 0 && (
+                <Box sx={{ flex: 1, minWidth: 260 }}>
+                  <Typography sx={{ ...eyebrow, color: muted, mb: 1 }}>{labels.extraServices}</Typography>
+                  {extras.map((extra) => (
+                    <Box key={extra.key} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, py: 0.5, borderBottom: `1px solid ${line}` }}>
+                      <Typography variant="body2" sx={{ color: '#1f2937' }}>{extra.label}</Typography>
+                      <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'nowrap' }}>{extra.value}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
-          </Box>
+          )}
 
           <Typography variant="caption" sx={{ color: muted }}>{labels.priceListFooter}</Typography>
         </Box>
