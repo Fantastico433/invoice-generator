@@ -116,6 +116,55 @@ test('leaves hidden rows out of the client price list', () => {
   expect(result.missions[0].listPrice).toBe(1200);
 });
 
+test('splits the list price into parts that add back up to it', () => {
+  const result = calculatePricing(createPricingInputs());
+
+  result.missions.forEach((mission) => {
+    const sum = mission.breakdown.reduce((total, part) => total + part.amount, 0);
+    expect(sum).toBeCloseTo(mission.listPrice, 6);
+    expect(mission.breakdown.find((part) => part.key === 'rounding').amount).toBeLessThanOrEqual(0);
+  });
+
+  const full = result.missions.find((mission) => mission.key === 'fullDay');
+  const share = (key) => full.breakdown.find((part) => part.key === key).share;
+  // Carrying the drone costs more of a full day's price than the people flying
+  // it: fixed cost is the largest single driver after the margin.
+  expect(share('fixed')).toBeCloseTo(0.276, 2);
+  expect(share('crew')).toBeCloseTo(0.168, 2);
+  expect(share('fixed')).toBeGreaterThan(share('crew'));
+  // The margin part is struck before rounding, so it reads a little above the
+  // 39.2% actually realised; the rounding row gives the difference back.
+  expect(share('margin')).toBeCloseTo(0.405, 2);
+  expect(share('margin') + share('rounding')).toBeCloseTo(full.marginTarget, 6);
+});
+
+test('keeps added rows, order and hiding out of the calculation', () => {
+  const labels = {
+    missionNames: { short: 'Lühike', halfDay: 'Pool päeva', fullDay: 'Täispäev' },
+    upTo: 'kuni',
+    onsite: 'kohapeal',
+    extraHourRow: 'Lisatund',
+    multiDayRow: 'Mitmepäevane',
+  };
+
+  const input = {
+    ...createPricingInputs(),
+    customRows: [{ key: 'row:custom-1', service: 'Öine termoülevaatus', list: 'kokkuleppel', pilot: 'kokkuleppel' }],
+    order: { row: ['row:custom-1', 'row:fullDay'] },
+  };
+  const result = calculatePricing(input);
+  const rows = buildPriceRows(result, input, labels);
+
+  // The added row leads, the one named after it follows, the rest keep their place.
+  expect(rows[0].key).toBe('row:custom-1');
+  expect(rows[0].list).toBe('kokkuleppel');
+  expect(rows[1].key).toBe('row:fullDay');
+  expect(rows).toHaveLength(6);
+
+  // And none of it moved a price.
+  expect(result.missions.map((mission) => mission.listPrice)).toEqual([1200, 2100, 3800]);
+});
+
 test('survives inputs that would otherwise divide by zero', () => {
   const result = calculatePricing({
     ...createPricingInputs(),

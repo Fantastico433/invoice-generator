@@ -65,6 +65,17 @@ the same sum without depreciation — says whether real money is left over.
 `pricing.test.js` pins the agreed figures so a changed formula cannot pass
 quietly.
 
+Each mission also carries a `breakdown`: the list price split into the four
+cost drivers, overhead, margin and the rounding given away, in euros that add
+back up to the list price exactly. It answers what a client is actually paying
+for — on a full day the drone's fixed cost (27.6%) outweighs the crew flying
+it (16.8%).
+
+Three fields shape the client page without touching the calculation: `hidden`
+drops rows, `customRows` adds rows the user typed, and `order` sets the
+sequence per group. A custom row's price is free text, so "kokkuleppel" is a
+valid value.
+
 Inputs persist to `localStorage` under `pricingInputs`, separately from the
 document.
 

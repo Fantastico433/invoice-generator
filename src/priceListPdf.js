@@ -42,7 +42,8 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
   const ink = '#1f2937';
   const muted = '#64748b';
   const line = '#e2e8f0';
-  const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('et-EE')} €`;
+  const money = (value) =>
+    typeof value === 'number' ? `${Math.round(value).toLocaleString('et-EE')} €` : String(value || '');
 
   const identity = [];
   if (logoDataUrl) identity.push({ image: logoDataUrl, width: 44, margin: [0, 2, 10, 0] });

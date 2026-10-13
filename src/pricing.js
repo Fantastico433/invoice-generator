@@ -53,8 +53,11 @@ export const createPricingInputs = () => ({
   sensorRentalMarkup: 0.15,
   analysisPerHour: 60,
 
-  // Rows left out of the client price list, by key (see PriceList.js).
+  // Client price list presentation: rows left out, rows the user added, and the
+  // order within each group. None of it touches the calculation.
   hidden: [],
+  customRows: [],
+  order: {},
 
   // 7. Missions
   missions: [
@@ -103,6 +106,21 @@ export const calculatePricing = (input) => {
     const listPrice = roundDownTo(rawPrice, input.missionRounding);
     const pilotPrice = listPrice * (1 - num(input.pilotDiscount));
 
+    // What the list price is made of, in euros that add back up to it:
+    // the four cost drivers, then overhead on top of them, then the margin on
+    // top of that, then whatever rounding down gave away.
+    const overheadAmount = (fixedCost + directCost) * num(input.overheadRate);
+    const marginAmount = num(input.targetMargin) >= 1 ? 0 : costTarget * safeDiv(num(input.targetMargin), 1 - num(input.targetMargin));
+    const breakdown = [
+      { key: 'fixed', amount: fixedCost },
+      { key: 'crew', amount: crewCost },
+      { key: 'consumables', amount: consumables },
+      { key: 'trip', amount: num(input.localTripCost) },
+      { key: 'overhead', amount: overheadAmount },
+      { key: 'margin', amount: marginAmount },
+      { key: 'rounding', amount: listPrice - rawPrice },
+    ].map((part) => ({ ...part, share: safeDiv(part.amount, listPrice) }));
+
     return {
       ...mission,
       crewHours,
@@ -117,6 +135,7 @@ export const calculatePricing = (input) => {
       rawPrice,
       listPrice,
       pilotPrice,
+      breakdown,
       listPricePerOnsiteHour: safeDiv(listPrice, mission.onsiteHours),
       pilotPricePerOnsiteHour: safeDiv(pilotPrice, mission.onsiteHours),
       marginTarget: safeDiv(listPrice - costTarget, listPrice),

@@ -9,12 +9,27 @@ const muted = '#64748b';
 const line = '#e2e8f0';
 const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' };
 
-// Every row the price list can carry, each with a stable key. A row listed in
-// `input.hidden` is left out, which is how a quote gets tailored to one client
-// without rewriting the model. Passing `all` returns the full set, which is
-// what the form needs to draw its checkboxes.
-const visible = (rows, input, all) =>
-  all ? rows : rows.filter((row) => !(input.hidden || []).includes(row.key));
+// Every row the price list can carry, each with a stable key. Rows listed in
+// `input.hidden` are left out and `input.order` decides the sequence, which is
+// how a quote gets tailored to one client without touching the model. Passing
+// `all` returns the full set, which is what the form needs for its controls.
+const arrange = (rows, input, group, all) => {
+  const custom = (input.customRows || [])
+    .filter((row) => row.key.startsWith(`${group}:`))
+    .map((row) => ({ ...row, custom: true }));
+  const everything = [...rows, ...custom];
+
+  const order = (input.order || {})[group] || [];
+  const ranked = [...everything].sort((a, b) => {
+    const left = order.indexOf(a.key);
+    const right = order.indexOf(b.key);
+    // Rows the order does not mention keep their natural place, after the rest.
+    return (left === -1 ? order.length + everything.indexOf(a) : left) -
+      (right === -1 ? order.length + everything.indexOf(b) : right);
+  });
+
+  return all ? ranked : ranked.filter((row) => !(input.hidden || []).includes(row.key));
+};
 
 export const buildPriceRows = (result, input, labels, all = false) => {
   const rows = result.missions.map((mission) => ({
@@ -26,11 +41,11 @@ export const buildPriceRows = (result, input, labels, all = false) => {
 
   rows.push({ key: 'row:extraHour', service: labels.extraHourRow, list: result.extraHourPrice, pilot: result.extraHourPilotPrice });
   rows.push({ key: 'row:multiDay', service: labels.multiDayRow, list: result.multiDayPrice, pilot: result.multiDayPilotPrice });
-  return visible(rows, input, all);
+  return arrange(rows, input, 'row', all);
 };
 
 export const buildIncludedRows = (input, labels, all = false) =>
-  visible(
+  arrange(
     [
       { key: 'inc:crew', text: `${labels.includedCrew}: ${input.crewSize} ${labels.includedCrewUnit}` },
       { key: 'inc:planning', text: labels.includedPlanning },
@@ -41,11 +56,12 @@ export const buildIncludedRows = (input, labels, all = false) =>
       { key: 'inc:weather', text: labels.includedWeather },
     ],
     input,
+    'inc',
     all
   );
 
 export const buildExtraRows = (input, labels, all = false) =>
-  visible(
+  arrange(
     [
       { key: 'ext:travel', label: `${labels.extraTravel} ${input.freeRadiusKm} km`, value: `${Number(input.perKmOutsideRadius).toFixed(2)} €/km` },
       { key: 'ext:accommodation', label: `${labels.extraAccommodation} ${input.accommodationFromKm} km`, value: labels.atCost },
@@ -55,11 +71,19 @@ export const buildExtraRows = (input, labels, all = false) =>
       { key: 'ext:analysis', label: labels.extraAnalysis, value: `${Math.round(input.analysisPerHour)} €/h` },
     ],
     input,
+    'ext',
     all
   );
 
+// Rows the user typed carry their own text; the price columns stay optional so
+// a custom line can be "kokkuleppel" rather than a number.
+export const customRowText = (row) => row.text || row.service || row.label || '';
+
 export default function PriceList({ input, result, labels, company, scale = 1 }) {
-  const money = (value) => `${Math.round(Number(value) || 0).toLocaleString('et-EE')} €`;
+  // A built-in row carries a number; a custom row carries whatever was typed,
+  // so "kokkuleppel" survives as text.
+  const money = (value) =>
+    typeof value === 'number' ? `${Math.round(value).toLocaleString('et-EE')} €` : String(value || '');
   const priceRows = buildPriceRows(result, input, labels);
   const included = buildIncludedRows(input, labels);
   const extras = buildExtraRows(input, labels);
