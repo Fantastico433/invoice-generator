@@ -181,6 +181,37 @@ export default function PricingForm({ data, onDataChange, result, labels }) {
       {/* ---- which rows the client actually sees ---- */}
       <Section title={labels.pricingVisibleRows}>
         <Grid size={12}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+            <FormControlLabel
+              sx={{ mr: 0, '& .MuiFormControlLabel-label': { fontSize: 14 } }}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={Boolean(data.showGrossPrices)}
+                  onChange={(event) => onDataChange({ ...data, showGrossPrices: event.target.checked })}
+                />
+              }
+              label={labels.pricingShowGross}
+            />
+            {data.showGrossPrices && (
+              <Box sx={{ width: 150 }}>
+                <TextField
+                  label={labels.pricingVatRate}
+                  type="number"
+                  value={Math.round((Number(data.vatRate) || 0) * 1000) / 10}
+                  onChange={(event) => {
+                    const raw = parseFloat(event.target.value);
+                    onDataChange({ ...data, vatRate: (Number.isNaN(raw) ? 0 : raw) / 100 });
+                  }}
+                  slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
+                  fullWidth
+                />
+              </Box>
+            )}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+            {labels.pricingGrossNote}
+          </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
             {labels.pricingVisibleRowsNote}
           </Typography>

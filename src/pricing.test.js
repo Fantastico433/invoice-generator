@@ -181,3 +181,47 @@ test('survives inputs that would otherwise divide by zero', () => {
   ];
   allNumbers.forEach((value) => expect(Number.isFinite(value)).toBe(true));
 });
+
+test('lifts every money figure when the list is shown with VAT', () => {
+  const labels = {
+    missionNames: { short: 'Lühike', halfDay: 'Pool päeva', fullDay: 'Täispäev' },
+    upTo: 'kuni',
+    onsite: 'kohapeal',
+    extraHourRow: 'Lisatund',
+    multiDayRow: 'Mitmepäevane',
+    extraTravel: 'Väljasõit üle',
+    extraAccommodation: 'Majutus üle',
+    extraNight: 'Öötöö',
+    extraRush: 'Kiirtöö',
+    extraSensor: 'LiDAR',
+    extraAnalysis: 'Analüüs',
+    atCost: 'tegeliku kulu järgi',
+    cost: 'kulu',
+  };
+
+  const net = { ...createPricingInputs(), customRows: [{ key: 'row:c1', service: 'Eritöö', list: '500', pilot: 'kokkuleppel' }] };
+  const gross = { ...net, showGrossPrices: true };
+  const result = calculatePricing(net);
+
+  const netRows = buildPriceRows(result, net, labels);
+  const grossRows = buildPriceRows(result, gross, labels);
+  const byKey = (rows, key) => rows.find((row) => row.key === key);
+
+  expect(byKey(netRows, 'row:fullDay').list).toBe(3800);
+  expect(byKey(grossRows, 'row:fullDay').list).toBeCloseTo(4712, 6);
+  expect(byKey(grossRows, 'row:fullDay').pilot).toBeCloseTo(3769.6, 6);
+
+  // A custom row's bare number converts; free text is left exactly as typed.
+  expect(byKey(grossRows, 'row:c1').list).toBeCloseTo(620, 6);
+  expect(byKey(grossRows, 'row:c1').pilot).toBe('kokkuleppel');
+
+  // Per-unit extras move too; percentages and "at cost" do not.
+  const grossExtras = buildExtraRows(gross, labels);
+  expect(grossExtras.find((row) => row.key === 'ext:travel').value).toBe('1,86 €/km');
+  expect(grossExtras.find((row) => row.key === 'ext:analysis').value).toBe('74,4 €/h');
+  expect(grossExtras.find((row) => row.key === 'ext:night').value).toBe('+25%');
+  expect(grossExtras.find((row) => row.key === 'ext:accommodation').value).toBe('tegeliku kulu järgi');
+
+  // And the model underneath stays net.
+  expect(calculatePricing(gross).missions.map((mission) => mission.listPrice)).toEqual([1200, 2100, 3800]);
+});

@@ -9,6 +9,28 @@ const muted = '#64748b';
 const line = '#e2e8f0';
 const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' };
 
+// Prices are held net. When the list is shown gross, every money figure is
+// lifted by the VAT rate at the moment it is rendered, so the model behind it
+// never changes. A custom row's price is free text: a bare number is converted,
+// anything else ("kokkuleppel") is left exactly as typed.
+const asNumber = (value) => {
+  if (typeof value === 'number') return value;
+  const text = String(value ?? '').trim().replace(/\s/g, '').replace(',', '.');
+  return text !== '' && /^-?\d+(\.\d+)?$/.test(text) ? Number(text) : null;
+};
+
+export const vatMultiplier = (input) => (input.showGrossPrices ? 1 + (Number(input.vatRate) || 0) : 1);
+
+export const withVat = (value, input) => {
+  const multiplier = vatMultiplier(input);
+  if (multiplier === 1) return value;
+  const number = asNumber(value);
+  return number === null ? value : number * multiplier;
+};
+
+// Trims a trailing .00 so round numbers do not grow a decimal tail.
+const trim = (value) => (Math.round(value * 100) / 100).toString().replace('.', ',');
+
 // Every row the price list can carry, each with a stable key. Rows listed in
 // `input.hidden` are left out and `input.order` decides the sequence, which is
 // how a quote gets tailored to one client without touching the model. Passing
@@ -41,7 +63,11 @@ export const buildPriceRows = (result, input, labels, all = false) => {
 
   rows.push({ key: 'row:extraHour', service: labels.extraHourRow, list: result.extraHourPrice, pilot: result.extraHourPilotPrice });
   rows.push({ key: 'row:multiDay', service: labels.multiDayRow, list: result.multiDayPrice, pilot: result.multiDayPilotPrice });
-  return arrange(rows, input, 'row', all);
+  return arrange(rows, input, 'row', all).map((row) => ({
+    ...row,
+    list: withVat(row.list, input),
+    pilot: withVat(row.pilot, input),
+  }));
 };
 
 export const buildIncludedRows = (input, labels, all = false) =>
@@ -63,12 +89,12 @@ export const buildIncludedRows = (input, labels, all = false) =>
 export const buildExtraRows = (input, labels, all = false) =>
   arrange(
     [
-      { key: 'ext:travel', label: `${labels.extraTravel} ${input.freeRadiusKm} km`, value: `${Number(input.perKmOutsideRadius).toFixed(2)} €/km` },
+      { key: 'ext:travel', label: `${labels.extraTravel} ${input.freeRadiusKm} km`, value: `${trim(Number(input.perKmOutsideRadius) * vatMultiplier(input))} €/km` },
       { key: 'ext:accommodation', label: `${labels.extraAccommodation} ${input.accommodationFromKm} km`, value: labels.atCost },
       { key: 'ext:night', label: labels.extraNight, value: `+${Math.round(input.nightWeekendSurcharge * 100)}%` },
       { key: 'ext:rush', label: labels.extraRush, value: `+${Math.round(input.rushSurcharge * 100)}%` },
       { key: 'ext:sensor', label: labels.extraSensor, value: `${labels.cost} +${Math.round(input.sensorRentalMarkup * 100)}%` },
-      { key: 'ext:analysis', label: labels.extraAnalysis, value: `${Math.round(input.analysisPerHour)} €/h` },
+      { key: 'ext:analysis', label: labels.extraAnalysis, value: `${trim(Number(input.analysisPerHour) * vatMultiplier(input))} €/h` },
     ],
     input,
     'ext',
@@ -129,7 +155,11 @@ export default function PriceList({ input, result, labels, company, scale = 1 })
               <Typography variant="h4" fontWeight={700} sx={{ color: accent, fontSize: '2rem', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
                 {labels.priceListTitle}
               </Typography>
-              <Typography variant="body2" sx={{ color: muted, mt: 0.5 }}>{labels.priceListSubtitle}</Typography>
+              <Typography variant="body2" sx={{ color: muted, mt: 0.5 }}>
+                {`${labels.priceListSubtitle} · ${input.showGrossPrices
+                  ? `${labels.pricesWithVat} ${Math.round((Number(input.vatRate) || 0) * 100)}%`
+                  : labels.pricesWithoutVat}`}
+              </Typography>
             </Box>
           </Box>
 

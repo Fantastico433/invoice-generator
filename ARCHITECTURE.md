@@ -71,10 +71,15 @@ back up to the list price exactly. It answers what a client is actually paying
 for — on a full day the drone's fixed cost (27.6%) outweighs the crew flying
 it (16.8%).
 
-Three fields shape the client page without touching the calculation: `hidden`
-drops rows, `customRows` adds rows the user typed, and `order` sets the
-sequence per group. A custom row's price is free text, so "kokkuleppel" is a
-valid value.
+Four fields shape the client page without touching the calculation: `hidden`
+drops rows, `customRows` adds rows the user typed, `order` sets the sequence
+per group, and `showGrossPrices` lifts every money figure by `vatRate` at
+render time. A custom row's price is free text, so "kokkuleppel" is a valid
+value — and on a gross list only bare numbers convert, text is left alone.
+
+The model always works in net euros. Net is right for business clients, who
+reclaim the VAT; a consumer must be shown the final price including it, which
+is what the gross switch is for.
 
 Inputs persist to `localStorage` under `pricingInputs`, separately from the
 document.

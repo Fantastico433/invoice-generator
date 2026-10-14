@@ -53,8 +53,11 @@ export const createPricingInputs = () => ({
   sensorRentalMarkup: 0.15,
   analysisPerHour: 60,
 
-  // Client price list presentation: rows left out, rows the user added, and the
-  // order within each group. None of it touches the calculation.
+  // Client price list presentation: whether prices are shown gross, rows left
+  // out, rows the user added, and the order within each group. None of it
+  // touches the calculation — the model always works in net euros.
+  showGrossPrices: false,
+  vatRate: 0.24,
   hidden: [],
   customRows: [],
   order: {},

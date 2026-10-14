@@ -103,7 +103,14 @@ export const buildPriceListDefinition = ({ input, result, labels, company, logoD
             alignment: 'right',
             stack: [
               { text: labels.priceListTitle, fontSize: 22, bold: true, color: accent, alignment: 'right' },
-              { text: labels.priceListSubtitle, color: muted, alignment: 'right', margin: [0, 4, 0, 0] },
+              {
+                text: `${labels.priceListSubtitle} · ${input.showGrossPrices
+                  ? `${labels.pricesWithVat} ${Math.round((Number(input.vatRate) || 0) * 100)}%`
+                  : labels.pricesWithoutVat}`,
+                color: muted,
+                alignment: 'right',
+                margin: [0, 4, 0, 0],
+              },
             ],
           },
         ],
