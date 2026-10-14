@@ -387,7 +387,7 @@ const pricingLabels = {
 const translations = {
   et: {
     toggleLang: 'ENG',
-    appTitle: 'Dokumendivabrik',
+    appTitle: 'Arvevabrik',
     livePreview: 'Eelvaade',
     previewScale: 'Eelvaate suurus',
     invoiceModeButton: 'Koosta hinnapakkumine',
@@ -458,7 +458,7 @@ const translations = {
   },
   en: {
     toggleLang: 'EST',
-    appTitle: 'Document Factory',
+    appTitle: 'Arvevabrik',
     livePreview: 'Live preview',
     previewScale: 'Preview size',
     invoiceModeButton: 'Create a quote',
@@ -789,9 +789,15 @@ function App() {
           {/* ---- top bar: identity, settings, actions — one row, wraps when narrow ---- */}
           <Box sx={{ ...glass, px: { xs: 2, md: 2.5 }, py: 1.25, mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75 }}>
             <Box sx={{ mr: 'auto', minWidth: 0, pr: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
-                {labels.appTitle}
-              </Typography>
+              <Box
+                component="img"
+                // Two files rather than a filter: the wordmark is navy and the
+                // mark is blue, so inverting the whole thing would cost the
+                // brand colour.
+                src={`${process.env.PUBLIC_URL}/arvevabrik${darkMode ? '-dark' : ''}.png`}
+                alt={labels.appTitle}
+                sx={{ height: 40, width: 'auto', display: 'block', mb: 0.25 }}
+              />
               <Typography
                 data-testid="document-mode-status"
                 variant="caption"
