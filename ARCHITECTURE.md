@@ -43,9 +43,9 @@ on render (subtotal → VAT from `taxRate` → total) and never stored.
 
 ## Flight hour calculator tab
 
-A second workspace, selected by the tab switch in the top bar, with the same
-split as the documents tab: inputs on the left, a client-ready page on the
-right.
+A second workspace for the SentH2ium hydrogen drone service, opened by the
+Kalkulaator button in the top bar and closed by the same button. It keeps the
+documents tab's split: inputs on the left, a client-ready page on the right.
 
 - `src/pricing.js` — the whole model as one pure function, `calculatePricing`.
   Nothing is typed twice: every figure is derived from the inputs. Margin is a

@@ -1,4 +1,4 @@
-// Pricing model for the Senthinel hydrogen drone service.
+// Pricing model for the SentH2ium hydrogen drone service.
 //
 // Mirrors the spreadsheet it replaces: every figure below is derived from the
 // inputs, nothing is typed in twice. Margin is a share of the selling price,
